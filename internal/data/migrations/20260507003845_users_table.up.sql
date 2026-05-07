@@ -6,7 +6,8 @@ CREATE TABLE users (
     email VARCHAR(45) NOT NULL UNIQUE,
     username VARCHAR(45) NOT NULL UNIQUE,
     password TEXT NOT NULL,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    deleted_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 -- Index for fast lookups by UUID
