@@ -22,6 +22,12 @@ type Config struct {
 		SecretKey string `yaml:"secret_key"`
 	} `yaml:"jwt"`
 
+	SMTP struct {
+		Host string `yaml:"host"`
+		Port string `yaml:"port"`
+		From string `yaml:"from"`
+	} `yaml:"smtp"`
+
 	Redis string `yaml:"redis"`
 }
 
