@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"os"
 	"strings"
@@ -26,7 +25,7 @@ func main() {
 
 	args := os.Args
 	if len(args) < 2 {
-		fmt.Println("Usage: go run cmd/migrate/main.go [init|up|down|status]")
+		log.Println("Usage: go run cmd/migrate/main.go [init|up|down|status]")
 		return
 	}
 
@@ -37,17 +36,17 @@ func main() {
 	case "up":
 		group, err := migrator.Migrate(ctx)
 		if err == nil {
-			fmt.Printf("Migrated to %s\n", group)
+			log.Printf("Migrated to %s\n", group)
 		}
 	case "down":
 		group, err := migrator.Rollback(ctx)
 		if err == nil {
-			fmt.Printf("Rolled back %s\n", group)
+			log.Printf("Rolled back %s\n", group)
 		}
 	case "status":
 		ms, err := migrator.MigrationsWithStatus(ctx)
 		if err == nil {
-			fmt.Printf("Migration Status:\n%s\n", ms)
+			log.Printf("Migration Status:\n%s\n", ms)
 		}
 	}
 

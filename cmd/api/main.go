@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"rdev-go-api/internal/config"
 	"rdev-go-api/internal/data"
 	"rdev-go-api/internal/server"
@@ -12,7 +13,7 @@ import (
 func main() {
 	cfg, err := config.LoadConfig("config.yaml")
 	if err != nil {
-		fmt.Println(fmt.Errorf("failed to load config: %w", err))
+		log.Println(fmt.Errorf("failed to load config: %w", err))
 		return
 	}
 
