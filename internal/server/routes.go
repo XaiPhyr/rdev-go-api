@@ -15,8 +15,10 @@ func RegisterRouters(r *gin.Engine, db *bun.DB, cfg *config.Config) {
 	// "service" package imports "data" (for the repository).
 	// Never let "data" import "service" or "server".
 
+	emailSvc := service.NewEmailService(cfg.SMTP.Host, cfg.SMTP.Port, cfg.SMTP.From)
+
 	userRepo := data.NewUserRepository(db)
-	authSvc := service.NewAuthService(userRepo, cfg)
+	authSvc := service.NewAuthService(userRepo, emailSvc, cfg)
 
 	apiVersion := r.Group("/api/v1")
 	setupAuthRoutes(apiVersion, authSvc)

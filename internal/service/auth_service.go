@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"log"
 	"rdev-go-api/internal/config"
 	"rdev-go-api/internal/data"
 	"rdev-go-api/internal/dto"
@@ -12,12 +13,13 @@ import (
 )
 
 type AuthService struct {
-	r *data.UserRepository
-	c *config.Config
+	r  *data.UserRepository
+	es *EmailService
+	c  *config.Config
 }
 
-func NewAuthService(r *data.UserRepository, c *config.Config) *AuthService {
-	return &AuthService{r: r, c: c}
+func NewAuthService(r *data.UserRepository, es *EmailService, c *config.Config) *AuthService {
+	return &AuthService{r: r, es: es, c: c}
 }
 
 func (s *AuthService) Login(ctx context.Context, username, password string) (string, error) {
@@ -46,6 +48,13 @@ func (s *AuthService) Register(ctx context.Context, req dto.RegisterRequest) err
 	}
 
 	err = s.r.CreateUser(ctx, user)
+	if err == nil {
+		go func() {
+			if err := s.es.SendEmail(req.Email); err != nil {
+				log.Printf("Failed to send email: %v", err)
+			}
+		}()
+	}
 
 	return err
 }
