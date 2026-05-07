@@ -9,7 +9,7 @@ import (
 	"github.com/uptrace/bun"
 )
 
-func RegisterRouters(r *gin.Engine, db *bun.DB, cfg *config.Config) {
+func Container(r *gin.Engine, db *bun.DB, cfg *config.Config) {
 	// Import Flow Server -> Service -> Data
 	// "server" package imports "service" (for the middleware).
 	// "service" package imports "data" (for the repository).
