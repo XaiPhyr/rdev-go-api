@@ -9,5 +9,10 @@ database:
 
 redis: "redis://localhost:6379"
 
+smtp:
+  host: "localhost"
+  port: "1025"
+  from: "no-reply@rdev.local"
+
 jwt:
   secret_key: "secret_key"
