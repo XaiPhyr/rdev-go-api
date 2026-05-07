@@ -1,0 +1,9 @@
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8200:8200"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
