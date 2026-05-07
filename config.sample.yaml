@@ -1,0 +1,13 @@
+server:
+  port: "localhost:8200"
+  env: "dev"
+
+database:
+  url: "postgres://postgres:postgres@localhost:5432/db?sslmode=disable"
+  max_open_conns: 10
+  max_idle_conns: 5
+
+redis: "redis://localhost:6379"
+
+jwt:
+  secret_key: "secret_key"
