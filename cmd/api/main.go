@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"log"
 	"rdev-go-api/internal/config"
@@ -11,7 +12,18 @@ import (
 )
 
 func main() {
-	cfg, err := config.LoadConfig("config.yaml")
+	arg := flag.String("env", "local", "Config environment [local|docker]")
+	flag.Parse()
+
+	file := ""
+	switch *arg {
+	case "local":
+		file = "config.yaml"
+	case "docker":
+		file = "config.docker.host.yaml"
+	}
+
+	cfg, err := config.LoadConfig(file)
 	if err != nil {
 		log.Println(fmt.Errorf("failed to load config: %w", err))
 		return
