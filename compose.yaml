@@ -1,5 +1,6 @@
 services:
-  backend:
+  api:
+    container_name: rdev-api
     build:
       context: .
       dockerfile: Dockerfile
@@ -7,3 +8,58 @@ services:
       - "8200:8200"
     extra_hosts:
       - "host.docker.internal:host-gateway"
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    networks:
+      - rdev-network
+
+  migrate:
+    container_name: rdev-migrate
+    build:
+      context: .
+      dockerfile: Dockerfile
+    entrypoint: ["sh", "-c", "./migrate init || true && ./migrate up"]
+    env_file:
+      - .env
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - rdev-network
+
+  db:
+    container_name: rdev-db
+    image: postgres:17-alpine
+    ports:
+      - "5431:5432"
+    env_file:
+      - .env
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-postgres} -d ${DB_NAME:-rdev_db}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - rdev-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: rdev-redis
+    ports:
+      - "6378:6379"
+    networks:
+      - rdev-network
+
+  mailhog:
+    container_name: rdev-mailhog
+    image: mailhog/mailhog
+    ports:
+      - "1025:1025"
+      - "8025:8025"
+    networks:
+      - rdev-network
+
+networks:
+  rdev-network:
+    driver: bridge

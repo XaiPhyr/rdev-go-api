@@ -40,5 +40,18 @@ func LoadConfig(configPath string) (*Config, error) {
 		return nil, err
 	}
 
+	config.Server.Port = getEnv("SERVER_PORT", config.Server.Port)
+	config.Server.Env = getEnv("APP_ENV", config.Server.Env)
+	config.Database.URL = getEnv("DB_URL", config.Database.URL)
+	config.JWT.SecretKey = getEnv("JWT_SECRET", config.JWT.SecretKey)
+	config.Redis = getEnv("REDIS_URL", config.Redis)
+
 	return config, err
+}
+
+func getEnv(key, currentVal string) string {
+	if value, exists := os.LookupEnv(key); exists {
+		return value
+	}
+	return currentVal
 }
