@@ -14,5 +14,4 @@ smtp:
   port: "1025"
   from: "no-reply@rdev.local"
 
-jwt:
-  secret_key: "secret_key"
+jwt_secret_key: "secret_key"
