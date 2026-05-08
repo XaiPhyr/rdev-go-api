@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"rdev-go-api/internal/config"
 	"rdev-go-api/internal/data"
@@ -9,17 +10,19 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/redis/go-redis/v9"
 	"golang.org/x/crypto/bcrypt"
 )
 
 type AuthService struct {
-	r  *data.UserRepository
-	es *EmailService
-	c  *config.Config
+	r     *data.UserRepository
+	es    *EmailService
+	redis *redis.Client
+	c     *config.Config
 }
 
-func NewAuthService(r *data.UserRepository, es *EmailService, c *config.Config) *AuthService {
-	return &AuthService{r: r, es: es, c: c}
+func NewAuthService(r *data.UserRepository, es *EmailService, redis *redis.Client, c *config.Config) *AuthService {
+	return &AuthService{r: r, es: es, redis: redis, c: c}
 }
 
 func (s *AuthService) Login(ctx context.Context, username, password string) (string, error) {
@@ -60,7 +63,7 @@ func (s *AuthService) Register(ctx context.Context, req dto.RegisterRequest) err
 }
 
 func (s *AuthService) GenerateToken(userID int64) (string, error) {
-	jwtKey := []byte(s.c.JWT.SecretKey)
+	jwtKey := []byte(s.c.JWTSecretKey)
 	claims := jwt.MapClaims{
 		"user_id": userID,
 		"exp":     time.Now().Add(24 * time.Hour).Unix(),
@@ -72,7 +75,7 @@ func (s *AuthService) GenerateToken(userID int64) (string, error) {
 }
 
 func (s *AuthService) ParseToken(token string) (int64, error) {
-	jwtKey := []byte(s.c.JWT.SecretKey)
+	jwtKey := []byte(s.c.JWTSecretKey)
 
 	t, err := jwt.Parse(token, func(t *jwt.Token) (any, error) {
 		if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
@@ -95,5 +98,27 @@ func (s *AuthService) ParseToken(token string) (int64, error) {
 }
 
 func (s *AuthService) CanAccess(ctx context.Context, userID int64, requiredRole string) (bool, error) {
-	return s.r.CheckUserPermission(ctx, userID, requiredRole)
+	allPerms, err := s.r.CheckUserPermission(ctx, userID, requiredRole)
+	if err != nil {
+		log.Println(fmt.Errorf("user permission error: %w", err))
+		return false, err
+	}
+
+	// cacheKey := fmt.Sprintf("user:perms:%d", userID)
+
+	// exists, err := s.redis.SIsMember(ctx, cacheKey, permSlug).Result()
+	// if err == nil {
+	// 	return exists, nil
+	// }
+
+	// if len(allPerms) > 0 {
+	// 	s.redis.SAdd(ctx, cacheKey, allPerms)
+	// 	s.redis.Expire(ctx, cacheKey, 1*time.Hour)
+	// }
+
+	// if slices.Contains(allPerms, requiredRole) {
+	// 	return true, nil
+	// }
+
+	return allPerms, nil
 }

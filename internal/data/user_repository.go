@@ -2,6 +2,8 @@ package data
 
 import (
 	"context"
+	"database/sql"
+	"time"
 
 	"github.com/uptrace/bun"
 )
@@ -17,16 +19,33 @@ func NewUserRepository(db *bun.DB) *UserRepository {
 func (r *UserRepository) CheckUserPermission(ctx context.Context, userID int64, roleName string) (bool, error) {
 	var exists bool
 
+	// var allPerms []string
+	// err = s.db.NewRaw(`
+	//     WITH RECURSIVE role_hierarchy AS (
+	//         SELECT role_id FROM user_roles WHERE user_id = ?
+	//         UNION
+	//         SELECT gr.role_id FROM user_groups ug
+	//         JOIN group_roles gr ON ug.group_id = gr.group_id
+	//         WHERE ug.user_id = ?
+	//         UNION
+	//         SELECT r.parent_id FROM roles r
+	//         INNER JOIN role_hierarchy rh ON r.id = rh.role_id
+	//         WHERE r.parent_id IS NOT NULL
+	//     )
+	//     SELECT DISTINCT p.slug
+	//     FROM role_hierarchy rh
+	//     JOIN role_permissions rp ON rp.role_id = rh.role_id
+	//     JOIN permissions p ON p.id = rp.permission_id
+	// `, userID, userID).Scan(ctx, &allPerms)
+
 	query := `
 		WITH RECURSIVE role_hierarchy AS (
-			-- Base: Roles from direct assignment and Groups
 			SELECT role_id FROM user_roles WHERE user_id = ?
 			UNION
 			SELECT gr.role_id FROM user_groups ug
 			JOIN group_roles gr ON ug.group_id = gr.group_id
 			WHERE ug.user_id = ?
 			UNION
-			-- Recursive: Traverse up the parent_id chain
 			SELECT r.parent_id
 			FROM roles r
 			INNER JOIN role_hierarchy rh ON r.id = rh.role_id
@@ -79,14 +98,14 @@ func (r *UserRepository) GetUserByUUID(ctx context.Context, uuid string) (*User,
 	return user, nil
 }
 
-func (r *UserRepository) GetUsers(ctx context.Context, q UserFilters) ([]User, int, error) {
+func (r *UserRepository) GetUsers(ctx context.Context, q BaseFilters) ([]User, int, error) {
 	var users []User
 
 	count, err := r.db.NewSelect().
 		Model(&users).
-		Limit(q.Limit).
-		Offset(q.Offset).
-		Order(q.Order).
+		Limit(q.PageSize).
+		Offset(q.Page).
+		Order(q.Sort).
 		ScanAndCount(ctx)
 
 	if err != nil {
@@ -97,24 +116,53 @@ func (r *UserRepository) GetUsers(ctx context.Context, q UserFilters) ([]User, i
 }
 
 func (r *UserRepository) CreateUser(ctx context.Context, user *User) error {
-	_, err := r.db.NewInsert().Model(user).Exec(ctx)
+	res, err := r.db.NewInsert().Model(user).Exec(ctx)
+
+	if rows, _ := res.RowsAffected(); rows == 0 {
+		return sql.ErrNoRows
+	}
+
 	return err
 }
 
 func (r *UserRepository) UpdateUser(ctx context.Context, user *User) error {
-	_, err := r.db.NewUpdate().
+	res, err := r.db.NewUpdate().
 		Model(user).
+		Set("updated_at = ?", time.Now()).
 		WherePK().
 		Exec(ctx)
+
+	if rows, _ := res.RowsAffected(); rows == 0 {
+		return sql.ErrNoRows
+	}
 
 	return err
 }
 
 func (r *UserRepository) DeleteUser(ctx context.Context, uuid string) error {
-	_, err := r.db.NewDelete().
+	res, err := r.db.NewDelete().
 		Model((*User)(nil)).
 		Where("uuid = ?", uuid).
 		Exec(ctx)
+
+	if rows, _ := res.RowsAffected(); rows == 0 {
+		return sql.ErrNoRows
+	}
+
+	return err
+}
+
+func (r *UserRepository) UpdateUserStatus(ctx context.Context, uuid string) error {
+	res, err := r.db.NewUpdate().
+		Model((*User)(nil)).
+		Set("status = CASE WHEN status = 'A' THEN 'I' ELSE 'A' END").
+		Set("updated_at = ?", time.Now()).
+		Where("uuid = ?", uuid).
+		Exec(ctx)
+
+	if rows, _ := res.RowsAffected(); rows == 0 {
+		return sql.ErrNoRows
+	}
 
 	return err
 }
