@@ -4,7 +4,11 @@ CREATE TABLE roles (
     name TEXT NOT NULL UNIQUE,
     description TEXT,
     parent_id BIGINT REFERENCES roles(id) ON DELETE SET NULL,
-    created_at TIMESTAMPTZ DEFAULT NOW()
+    status VARCHAR(1) NOT NULL DEFAULT 'A',
+    uuid UUID NOT NULL DEFAULT gen_random_uuid(),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW(),
+    deleted_at TIMESTAMPTZ DEFAULT NULL
 );
 
 -- 2. Groups table
@@ -12,13 +16,22 @@ CREATE TABLE groups (
     id BIGSERIAL PRIMARY KEY,
     name TEXT NOT NULL UNIQUE,
     description TEXT,
-    created_at TIMESTAMPTZ DEFAULT NOW()
+    status VARCHAR(1) NOT NULL DEFAULT 'A',
+    uuid UUID NOT NULL DEFAULT gen_random_uuid(),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW(),
+    deleted_at TIMESTAMPTZ DEFAULT NULL
 );
 
 -- 3. User-Role Junction (Direct Assignment)
 CREATE TABLE user_roles (
     user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     role_id BIGINT NOT NULL REFERENCES roles(id) ON DELETE CASCADE,
+    status VARCHAR(1) NOT NULL DEFAULT 'A',
+    uuid UUID NOT NULL DEFAULT gen_random_uuid(),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW(),
+    deleted_at TIMESTAMPTZ DEFAULT NULL,
     PRIMARY KEY (user_id, role_id)
 );
 
@@ -26,6 +39,11 @@ CREATE TABLE user_roles (
 CREATE TABLE user_groups (
     user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     group_id BIGINT NOT NULL REFERENCES groups(id) ON DELETE CASCADE,
+    status VARCHAR(1) NOT NULL DEFAULT 'A',
+    uuid UUID NOT NULL DEFAULT gen_random_uuid(),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW(),
+    deleted_at TIMESTAMPTZ DEFAULT NULL,
     PRIMARY KEY (user_id, group_id)
 );
 
@@ -33,10 +51,39 @@ CREATE TABLE user_groups (
 CREATE TABLE group_roles (
     group_id BIGINT NOT NULL REFERENCES groups(id) ON DELETE CASCADE,
     role_id BIGINT NOT NULL REFERENCES roles(id) ON DELETE CASCADE,
+    status VARCHAR(1) NOT NULL DEFAULT 'A',
+    uuid UUID NOT NULL DEFAULT gen_random_uuid(),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW(),
+    deleted_at TIMESTAMPTZ DEFAULT NULL,
     PRIMARY KEY (group_id, role_id)
 );
 
--- 6. Initial Inserts
+-- 6. Permissions Table
+CREATE TABLE permissions (
+    id BIGSERIAL PRIMARY KEY,
+    slug TEXT NOT NULL UNIQUE, -- e.g., 'orders:create', 'users:view'
+    description TEXT,
+    status VARCHAR(1) NOT NULL DEFAULT 'A',
+    uuid UUID NOT NULL DEFAULT gen_random_uuid(),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW(),
+    deleted_at TIMESTAMPTZ DEFAULT NULL
+);
+
+-- 7. Role-Permission Junction
+CREATE TABLE role_permissions (
+    role_id BIGINT NOT NULL REFERENCES roles(id) ON DELETE CASCADE,
+    permission_id BIGINT NOT NULL REFERENCES permissions(id) ON DELETE CASCADE,
+    status VARCHAR(1) NOT NULL DEFAULT 'A',
+    uuid UUID NOT NULL DEFAULT gen_random_uuid(),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW(),
+    deleted_at TIMESTAMPTZ DEFAULT NULL,
+    PRIMARY KEY (role_id, permission_id)
+);
+
+-- 8. Initial Inserts
 -- Create Hierarchy: super_admin -> admin -> editor -> viewer
 INSERT INTO roles (name, description, parent_id) VALUES 
 ('viewer', 'Can only read data', NULL),
@@ -52,21 +99,7 @@ INSERT INTO groups (name, description) VALUES
 INSERT INTO group_roles (group_id, role_id) VALUES 
 (1, 3); -- Management group gets 'admin' role
 
--- 6. Permissions Table
-CREATE TABLE permissions (
-    id BIGSERIAL PRIMARY KEY,
-    slug TEXT NOT NULL UNIQUE, -- e.g., 'orders:create', 'users:view'
-    description TEXT
-);
-
--- 7. Role-Permission Junction
-CREATE TABLE role_permissions (
-    role_id BIGINT NOT NULL REFERENCES roles(id) ON DELETE CASCADE,
-    permission_id BIGINT NOT NULL REFERENCES permissions(id) ON DELETE CASCADE,
-    PRIMARY KEY (role_id, permission_id)
-);
-
--- 8. Seed some permissions
+-- 9. Seed some permissions
 INSERT INTO permissions (slug, description) VALUES 
 ('users:view', 'Can view user profiles'),
 ('users:edit', 'Can modify user data'),

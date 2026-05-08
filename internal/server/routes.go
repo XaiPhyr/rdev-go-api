@@ -6,23 +6,26 @@ import (
 	"rdev-go-api/internal/service"
 
 	"github.com/gin-gonic/gin"
+	"github.com/redis/go-redis/v9"
 	"github.com/uptrace/bun"
 )
 
-func Container(r *gin.Engine, db *bun.DB, cfg *config.Config) {
-	// Import Flow Server -> Service -> Data
-	// "server" package imports "service" (for the middleware).
-	// "service" package imports "data" (for the repository).
-	// Never let "data" import "service" or "server".
-
+// Import Flow Server -> Service -> Data
+// "server" package imports "service" (for the middleware).
+// "service" package imports "data" (for the repository).
+// Never let "data" import "service" or "server".
+func Container(r *gin.Engine, db *bun.DB, redis *redis.Client, cfg *config.Config) {
 	emailSvc := service.NewEmailService(cfg.SMTP.Host, cfg.SMTP.Port, cfg.SMTP.From)
 
 	userRepo := data.NewUserRepository(db)
-	authSvc := service.NewAuthService(userRepo, emailSvc, cfg)
+	authSvc := service.NewAuthService(userRepo, emailSvc, redis, cfg)
+
+	categoryRepo := data.NewCategoryRepository(db)
 
 	apiVersion := r.Group("/api/v1")
 	setupAuthRoutes(apiVersion, authSvc)
-	setupUserRoutes(apiVersion, userRepo, authSvc)
+	setupUserRoutes(apiVersion, userRepo, authSvc, emailSvc, redis)
+	setupCategoryRoutes(apiVersion, categoryRepo, authSvc, emailSvc, redis)
 }
 
 func setupAuthRoutes(rg *gin.RouterGroup, authSvc *service.AuthService) {
@@ -32,16 +35,31 @@ func setupAuthRoutes(rg *gin.RouterGroup, authSvc *service.AuthService) {
 	rg.POST("/register", authHandler.Register)
 }
 
-func setupUserRoutes(rg *gin.RouterGroup, userRepo *data.UserRepository, authSvc *service.AuthService) {
-	userSvc := service.NewUserService(userRepo)
+func setupUserRoutes(rg *gin.RouterGroup, userRepo *data.UserRepository, authSvc *service.AuthService, emailSvc *service.EmailService, redis *redis.Client) {
+	userSvc := service.NewUserService(userRepo, emailSvc, redis)
 	userHandler := NewUserHandler(userSvc)
 
 	userRoute := rg.Group("/users")
 	userRoute.Use(AuthRequired(authSvc))
-	{
-		userRoute.GET("", PermissionRequired(authSvc, "users:view"), userHandler.GetUsers)
-		userRoute.GET("/:uuid", PermissionRequired(authSvc, "users:view"), userHandler.GetUserByUUID)
-		userRoute.PUT("/:uuid", PermissionRequired(authSvc, "users:edit"), userHandler.UpdateUser)
-		userRoute.DELETE("/:uuid", PermissionRequired(authSvc, "users:delete"), userHandler.DeleteUser)
-	}
+
+	userRoute.GET("", PermissionRequired(authSvc, "users:view"), userHandler.GetUsers)
+	userRoute.GET("/:uuid", PermissionRequired(authSvc, "users:view"), userHandler.GetUserByUUID)
+	userRoute.PUT("/:uuid", PermissionRequired(authSvc, "users:edit"), userHandler.UpdateUser)
+	userRoute.DELETE("/:uuid", PermissionRequired(authSvc, "users:delete"), userHandler.DeleteUser)
+	userRoute.POST("/:uuid", PermissionRequired(authSvc, "users:status"), userHandler.UpdateUserStatus)
+}
+
+func setupCategoryRoutes(rg *gin.RouterGroup, categoryRepo *data.CategoryRepository, authSvc *service.AuthService, emailSvc *service.EmailService, redis *redis.Client) {
+	categorySvc := service.NewCategory(categoryRepo, emailSvc, redis)
+	categoryHandler := NewCategoryHandler(categorySvc)
+
+	categoryRoute := rg.Group("/categories")
+	categoryRoute.Use(AuthRequired(authSvc))
+
+	categoryRoute.GET("", PermissionRequired(authSvc, "categories:view"), categoryHandler.GetCategories)
+	categoryRoute.GET("/:uuid", PermissionRequired(authSvc, "categories:view"), categoryHandler.GetCategoryByUUID)
+	categoryRoute.PUT("/:uuid", PermissionRequired(authSvc, "categories:edit"), categoryHandler.UpdateCategory)
+	categoryRoute.DELETE("/:uuid", PermissionRequired(authSvc, "categories:delete"), categoryHandler.DeleteCategory)
+	categoryRoute.POST("/:uuid", PermissionRequired(authSvc, "categories:status"), categoryHandler.UpdateCategoryStatus)
+	categoryRoute.GET("/tree", PermissionRequired(authSvc, "categories:view"), categoryHandler.GetCategoryTree)
 }
