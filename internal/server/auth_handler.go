@@ -19,13 +19,13 @@ func NewAuthHandler(svc *service.AuthService) *AuthHandler {
 func (s *AuthHandler) Login(ctx *gin.Context) {
 	var req dto.LoginRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": "invalid request"})
+		responseErr(ctx, http.StatusBadRequest, "invalid request")
 		return
 	}
 
 	token, err := s.svc.Login(ctx.Request.Context(), req.Username, req.Password)
 	if err != nil {
-		ctx.JSON(http.StatusUnauthorized, gin.H{"error": "invalid credentials"})
+		responseErr(ctx, http.StatusUnauthorized, "invalid credentials")
 		return
 	}
 
@@ -35,13 +35,13 @@ func (s *AuthHandler) Login(ctx *gin.Context) {
 func (s *AuthHandler) Register(ctx *gin.Context) {
 	var req dto.RegisterRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": "invalid request"})
+		responseErr(ctx, http.StatusBadRequest, "invalid request")
 		return
 	}
 
 	err := s.svc.Register(ctx.Request.Context(), req)
 	if err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": "invalid request"})
+		responseErr(ctx, http.StatusBadRequest, "invalid request")
 		return
 	}
 

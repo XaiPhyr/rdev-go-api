@@ -16,64 +16,76 @@ func NewUserHandler(svc *service.UserService) *UserHandler {
 	return &UserHandler{svc: svc}
 }
 
-func (s *UserHandler) GetUserByUUID(ctx *gin.Context) {
+func (h *UserHandler) GetUserByUUID(ctx *gin.Context) {
 	uuid := ctx.Param("uuid")
 
-	user, err := s.svc.GetUserByUUID(ctx, uuid)
+	user, err := h.svc.GetUserByUUID(ctx, uuid)
 
 	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
+		responseErr(ctx, http.StatusInternalServerError, "internal server error")
 		return
 	}
 
 	if user == nil {
-		ctx.JSON(http.StatusNotFound, gin.H{"error": "user not found"})
+		responseErr(ctx, http.StatusNotFound, "user not found")
 		return
 	}
 
 	ctx.JSON(http.StatusOK, user)
 }
 
-func (s *UserHandler) GetUsers(ctx *gin.Context) {
-	var req dto.UserQuery
+func (h *UserHandler) GetUsers(ctx *gin.Context) {
+	var req dto.Query
 	if err := ctx.ShouldBindQuery(&req); err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": "invalid query parameters"})
+		responseErr(ctx, http.StatusBadRequest, "invalid query parameters")
 		return
 	}
 
-	users, count, err := s.svc.GetUsers(ctx.Request.Context(), req)
+	users, count, err := h.svc.GetUsers(ctx.Request.Context(), req)
 	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "failed to fetch users"})
+		responseErr(ctx, http.StatusInternalServerError, "failed to fetch users")
 		return
 	}
 
 	ctx.JSON(http.StatusOK, gin.H{"data": users, "count": count})
 }
 
-func (s *UserHandler) UpdateUser(ctx *gin.Context) {
+func (h *UserHandler) UpdateUser(ctx *gin.Context) {
 	uuid := ctx.Param("uuid")
 
 	var req dto.UserRequestUpdate
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": "internal server error"})
+		responseErr(ctx, http.StatusBadRequest, "internal server error")
 		return
 	}
 
-	err := s.svc.UpdateUser(ctx.Request.Context(), uuid, req)
+	err := h.svc.UpdateUser(ctx.Request.Context(), uuid, req)
 	if err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": "internal server error"})
+		responseErr(ctx, http.StatusBadRequest, "internal server error")
 		return
 	}
 
 	ctx.JSON(http.StatusOK, gin.H{"message": "success"})
 }
 
-func (s *UserHandler) DeleteUser(ctx *gin.Context) {
+func (h *UserHandler) DeleteUser(ctx *gin.Context) {
 	uuid := ctx.Param("uuid")
 
-	err := s.svc.DeleteUser(ctx.Request.Context(), uuid)
+	err := h.svc.DeleteUser(ctx.Request.Context(), uuid)
 	if err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": "internal server error"})
+		responseErr(ctx, http.StatusBadRequest, "internal server error")
+		return
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{"message": "success"})
+}
+
+func (h *UserHandler) UpdateUserStatus(ctx *gin.Context) {
+	uuid := ctx.Param("uuid")
+
+	err := h.svc.UpdateUserStatus(ctx.Request.Context(), uuid)
+	if err != nil {
+		responseErr(ctx, http.StatusBadRequest, "internal server error")
 		return
 	}
 
