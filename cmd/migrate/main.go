@@ -20,7 +20,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	db := data.ConnectDB(cfg.Database.URL, cfg.Database.MaxOpenConns, cfg.Database.MaxIdleConns)
+	db := config.ConnectDB(cfg.Database)
 	migrator := migrate.NewMigrator(db, data.Migrations)
 
 	args := os.Args

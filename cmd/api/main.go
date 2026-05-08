@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log"
 	"rdev-go-api/internal/config"
-	"rdev-go-api/internal/data"
 	"rdev-go-api/internal/server"
 
 	"github.com/gin-gonic/gin"
@@ -33,8 +32,9 @@ func main() {
 	router.Use(gin.Logger())
 	router.Use(gin.Recovery())
 
-	db := data.ConnectDB(cfg.Database.URL, cfg.Database.MaxOpenConns, cfg.Database.MaxIdleConns)
-	server.Container(router, db, cfg)
+	db := config.ConnectDB(cfg.Database)
+	redis := config.ConnectRedis(cfg.Redis)
+	server.Container(router, db, redis, cfg)
 
 	router.Run(cfg.Server.Port)
 }
