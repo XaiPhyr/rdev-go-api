@@ -51,10 +51,26 @@ func (h *UserHandler) GetUsers(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, gin.H{"data": users, "count": count})
 }
 
+func (h *UserHandler) CreateUser(ctx *gin.Context) {
+	var req dto.UserRequest
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		responseErr(ctx, http.StatusBadRequest, "internal server error")
+		return
+	}
+
+	err := h.svc.CreateUser(ctx.Request.Context(), req)
+	if err != nil {
+		responseErr(ctx, http.StatusBadRequest, "internal server error")
+		return
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{"message": "success"})
+}
+
 func (h *UserHandler) UpdateUser(ctx *gin.Context) {
 	uuid := ctx.Param("uuid")
 
-	var req dto.UserRequestUpdate
+	var req dto.UserRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
 		responseErr(ctx, http.StatusBadRequest, "internal server error")
 		return

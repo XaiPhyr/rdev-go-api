@@ -29,7 +29,26 @@ func (s *UserService) GetUsers(ctx context.Context, q dto.Query) ([]data.User, i
 	return s.r.GetUsers(ctx, filters)
 }
 
-func (s *UserService) UpdateUser(ctx context.Context, uuid string, req dto.UserRequestUpdate) error {
+func (s *UserService) CreateUser(ctx context.Context, req dto.UserRequest) error {
+	user := &data.User{}
+
+	if req.FirstName != nil {
+		user.FirstName = *req.FirstName
+	}
+	if req.LastName != nil {
+		user.LastName = *req.LastName
+	}
+	if req.Username != nil {
+		user.Username = *req.Username
+	}
+	if req.Email != nil {
+		user.Email = *req.Email
+	}
+
+	return s.r.CreateUser(ctx, user)
+}
+
+func (s *UserService) UpdateUser(ctx context.Context, uuid string, req dto.UserRequest) error {
 	user, err := s.r.GetUserByUUID(ctx, uuid)
 	if err != nil {
 		return err

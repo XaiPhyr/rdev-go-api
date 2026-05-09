@@ -48,6 +48,7 @@ func setupUserRoutes(rg *gin.RouterGroup, userRepo *data.UserRepository, authSvc
 
 	userRoute.GET("", PermissionRequired(authSvc, "users:view"), userHandler.GetUsers)
 	userRoute.GET("/:uuid", PermissionRequired(authSvc, "users:view"), userHandler.GetUserByUUID)
+	userRoute.POST("", PermissionRequired(authSvc, "users:create"), userHandler.CreateUser)
 	userRoute.PUT("/:uuid", PermissionRequired(authSvc, "users:edit"), userHandler.UpdateUser)
 	userRoute.DELETE("/:uuid", PermissionRequired(authSvc, "users:delete"), userHandler.DeleteUser)
 	userRoute.POST("/:uuid", PermissionRequired(authSvc, "users:status"), userHandler.UpdateUserStatus)
