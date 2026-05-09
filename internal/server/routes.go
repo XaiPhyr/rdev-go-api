@@ -63,6 +63,7 @@ func setupCategoryRoutes(rg *gin.RouterGroup, categoryRepo *data.CategoryReposit
 
 	categoryRoute.GET("", PermissionRequired(authSvc, "categories:view"), categoryHandler.GetCategories)
 	categoryRoute.GET("/:uuid", PermissionRequired(authSvc, "categories:view"), categoryHandler.GetCategoryByUUID)
+	categoryRoute.POST("", PermissionRequired(authSvc, "categories:create"), categoryHandler.CreateCategory)
 	categoryRoute.PUT("/:uuid", PermissionRequired(authSvc, "categories:edit"), categoryHandler.UpdateCategory)
 	categoryRoute.DELETE("/:uuid", PermissionRequired(authSvc, "categories:delete"), categoryHandler.DeleteCategory)
 	categoryRoute.POST("/:uuid", PermissionRequired(authSvc, "categories:status"), categoryHandler.UpdateCategoryStatus)

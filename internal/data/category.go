@@ -8,7 +8,7 @@ type Category struct {
 
 	Name     string `bun:"name" json:"name"`
 	Slug     string `bun:"slug" json:"slug"`
-	ParentID int    `bun:"parent_id" json:"parent_id,omitempty"`
+	ParentID int    `bun:"parent_id,default:null" json:"parent_id,omitempty"`
 	Depth    string `bun:",scanonly" json:"depth,omitempty"`
 	FullPath string `bun:",scanonly" json:"full_path,omitempty"`
 }

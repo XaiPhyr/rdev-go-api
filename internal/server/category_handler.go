@@ -67,10 +67,26 @@ func (h *CategoryHandler) GetCategoryTree(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, gin.H{"data": categories})
 }
 
+func (h *CategoryHandler) CreateCategory(ctx *gin.Context) {
+	var req dto.CategoryRequest
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		responseErr(ctx, http.StatusBadRequest, "internal server error")
+		return
+	}
+
+	err := h.svc.CreateCategory(ctx.Request.Context(), req)
+	if err != nil {
+		responseErr(ctx, http.StatusBadRequest, "internal server error")
+		return
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{"message": "success"})
+}
+
 func (h *CategoryHandler) UpdateCategory(ctx *gin.Context) {
 	uuid := ctx.Param("uuid")
 
-	var req dto.CategoryRequestUpdate
+	var req dto.CategoryRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
 		responseErr(ctx, http.StatusBadRequest, "internal server error")
 		return

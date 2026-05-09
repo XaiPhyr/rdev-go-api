@@ -35,7 +35,23 @@ func (s *CategoryService) GetCategoryTree(ctx context.Context, q dto.Query) ([]d
 	return s.r.GetCategoryTree(ctx, filters)
 }
 
-func (s *CategoryService) UpdateCategory(ctx context.Context, uuid string, req dto.CategoryRequestUpdate) error {
+func (s *CategoryService) CreateCategory(ctx context.Context, req dto.CategoryRequest) error {
+	category := &data.Category{}
+
+	if req.ParentID != nil {
+		category.ParentID = *req.ParentID
+	}
+	if req.Name != nil {
+		category.Name = *req.Name
+	}
+	if req.Slug != nil {
+		category.Slug = *req.Slug
+	}
+
+	return s.r.CreateCategory(ctx, category)
+}
+
+func (s *CategoryService) UpdateCategory(ctx context.Context, uuid string, req dto.CategoryRequest) error {
 	category, err := s.r.GetCategoryByUUID(ctx, uuid)
 	if err != nil {
 		return err

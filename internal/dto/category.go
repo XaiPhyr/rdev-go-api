@@ -1,6 +1,6 @@
 package dto
 
-type CategoryRequestUpdate struct {
+type CategoryRequest struct {
 	ParentID *int    `json:"parent_id"`
 	Name     *string `json:"name"`
 	Slug     *string `json:"slug"`
