@@ -140,7 +140,7 @@ func (r *ProductRepository) CreateProduct(ctx context.Context, product *Product)
 func (r *ProductRepository) UpdateProduct(ctx context.Context, product *Product) error {
 	res, err := r.db.NewUpdate().
 		Model(product).
-		Column("parent_id", "name", "slug").
+		Column("category_id", "name", "slug", "description", "sku", "barcode", "price", "cost_price").
 		Set("updated_at = ?", time.Now()).
 		WherePK().
 		Exec(ctx)
