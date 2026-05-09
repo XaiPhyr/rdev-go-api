@@ -51,10 +51,26 @@ func (h *InventoryHandler) GetInventories(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, gin.H{"data": inventories, "count": count})
 }
 
+func (h *InventoryHandler) CreateInventory(ctx *gin.Context) {
+	var req dto.InventoryRequest
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		responseErr(ctx, http.StatusBadRequest, "internal server error")
+		return
+	}
+
+	err := h.svc.CreateInventory(ctx.Request.Context(), req)
+	if err != nil {
+		responseErr(ctx, http.StatusBadRequest, "internal server error")
+		return
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{"message": "success"})
+}
+
 func (h *InventoryHandler) UpdateInventory(ctx *gin.Context) {
 	uuid := ctx.Param("uuid")
 
-	var req dto.InventoryRequestUpdate
+	var req dto.InventoryRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
 		responseErr(ctx, http.StatusBadRequest, "internal server error")
 		return

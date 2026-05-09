@@ -96,6 +96,7 @@ func setupInventoryRoutes(rg *gin.RouterGroup, inventoryRepo *data.InventoryRepo
 
 	inventoryRoute.GET("", PermissionRequired(authSvc, "inventories:view"), inventoryHandler.GetInventories)
 	inventoryRoute.GET("/:uuid", PermissionRequired(authSvc, "inventories:view"), inventoryHandler.GetInventoryByUUID)
+	inventoryRoute.POST("", PermissionRequired(authSvc, "inventories:create"), inventoryHandler.CreateInventory)
 	inventoryRoute.PUT("/:uuid", PermissionRequired(authSvc, "inventories:edit"), inventoryHandler.UpdateInventory)
 	inventoryRoute.DELETE("/:uuid", PermissionRequired(authSvc, "inventories:delete"), inventoryHandler.DeleteInventory)
 	inventoryRoute.POST("/:uuid", PermissionRequired(authSvc, "inventories:status"), inventoryHandler.UpdateInventoryStatus)

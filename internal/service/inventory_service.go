@@ -29,7 +29,23 @@ func (s *InventoryService) GetInventories(ctx context.Context, q dto.Query) ([]d
 	return s.r.GetInventories(ctx, filters)
 }
 
-func (s *InventoryService) UpdateInventory(ctx context.Context, uuid string, req dto.InventoryRequestUpdate) error {
+func (s *InventoryService) CreateInventory(ctx context.Context, req dto.InventoryRequest) error {
+	inventory := &data.Inventory{}
+
+	if req.ProductID != nil {
+		inventory.ProductID = *req.ProductID
+	}
+	if req.Quantity != nil {
+		inventory.Quantity = *req.Quantity
+	}
+	if req.LowStockThreshold != nil {
+		inventory.LowStockThreshold = *req.LowStockThreshold
+	}
+
+	return s.r.CreateInventory(ctx, inventory)
+}
+
+func (s *InventoryService) UpdateInventory(ctx context.Context, uuid string, req dto.InventoryRequest) error {
 	inventory, err := s.r.GetInventoryByUUID(ctx, uuid)
 	if err != nil {
 		return err
