@@ -24,33 +24,13 @@ func (s *CategoryService) GetCategoryByUUID(ctx context.Context, uuid string) (*
 }
 
 func (s *CategoryService) GetCategories(ctx context.Context, q dto.Query) ([]data.Category, int, error) {
-	sort := "id ASC"
-	if q.Sort != "" {
-		sort = q.Sort
-	}
-
-	filters := data.BaseFilters{
-		PageSize: q.Limit,
-		Page:     q.Offset,
-		Sort:     sort,
-		Search:   q.Search,
-	}
+	filters := q.SanitizeQuery([]string{"name"})
 
 	return s.r.GetCategories(ctx, filters)
 }
 
 func (s *CategoryService) GetCategoryTree(ctx context.Context, q dto.Query) ([]data.CategoryTree, error) {
-	sort := "id ASC"
-	if q.Sort != "" {
-		sort = q.Sort
-	}
-
-	filters := data.BaseFilters{
-		PageSize: q.Limit,
-		Page:     q.Offset,
-		Sort:     sort,
-		Search:   q.Search,
-	}
+	filters := q.SanitizeQuery([]string{"name"})
 
 	return s.r.GetCategoryTree(ctx, filters)
 }
@@ -61,9 +41,15 @@ func (s *CategoryService) UpdateCategory(ctx context.Context, uuid string, req d
 		return err
 	}
 
-	category.ParentID = req.ParentID
-	category.Name = req.Name
-	category.Slug = req.Slug
+	if req.ParentID != nil {
+		category.ParentID = *req.ParentID
+	}
+	if req.Name != nil {
+		category.Name = *req.Name
+	}
+	if req.Slug != nil {
+		category.Slug = *req.Slug
+	}
 
 	return s.r.UpdateCategory(ctx, category)
 }

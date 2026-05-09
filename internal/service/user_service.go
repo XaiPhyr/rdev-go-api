@@ -24,17 +24,7 @@ func (s *UserService) GetUserByUUID(ctx context.Context, uuid string) (*data.Use
 }
 
 func (s *UserService) GetUsers(ctx context.Context, q dto.Query) ([]data.User, int, error) {
-	sort := "id ASC"
-	if q.Sort != "" {
-		sort = q.Sort
-	}
-
-	filters := data.BaseFilters{
-		PageSize: q.Limit,
-		Page:     q.Offset,
-		Sort:     sort,
-		Search:   q.Search,
-	}
+	filters := q.SanitizeQuery([]string{"first_name", "last_name", "email", "username"})
 
 	return s.r.GetUsers(ctx, filters)
 }
@@ -45,9 +35,15 @@ func (s *UserService) UpdateUser(ctx context.Context, uuid string, req dto.UserR
 		return err
 	}
 
-	user.FirstName = req.FirstName
-	user.LastName = req.LastName
-	user.Username = req.Username
+	if req.FirstName != nil {
+		user.FirstName = *req.FirstName
+	}
+	if req.LastName != nil {
+		user.LastName = *req.LastName
+	}
+	if req.Username != nil {
+		user.Username = *req.Username
+	}
 
 	return s.r.UpdateUser(ctx, user)
 }

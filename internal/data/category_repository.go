@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"time"
 
+	"github.com/XaiPhyr/rdev-go-api/internal/dto"
 	"github.com/uptrace/bun"
 )
 
@@ -31,7 +32,7 @@ func (r *CategoryRepository) GetCategoryByUUID(ctx context.Context, uuid string)
 	return category, nil
 }
 
-func (r *CategoryRepository) GetCategories(ctx context.Context, q BaseFilters) ([]Category, int, error) {
+func (r *CategoryRepository) GetCategories(ctx context.Context, q dto.BaseFilters) ([]Category, int, error) {
 	var categories []Category
 
 	count, err := r.db.NewSelect().
@@ -48,7 +49,7 @@ func (r *CategoryRepository) GetCategories(ctx context.Context, q BaseFilters) (
 	return categories, count, nil
 }
 
-func (r *CategoryRepository) GetCategoryTree(ctx context.Context, q BaseFilters) ([]CategoryTree, error) {
+func (r *CategoryRepository) GetCategoryTree(ctx context.Context, q dto.BaseFilters) ([]CategoryTree, error) {
 	var categories []CategoryTree
 
 	query := `WITH RECURSIVE category_tree AS (

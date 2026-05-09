@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"time"
 
+	"github.com/XaiPhyr/rdev-go-api/internal/dto"
 	"github.com/uptrace/bun"
 )
 
@@ -98,7 +99,7 @@ func (r *UserRepository) GetUserByUUID(ctx context.Context, uuid string) (*User,
 	return user, nil
 }
 
-func (r *UserRepository) GetUsers(ctx context.Context, q BaseFilters) ([]User, int, error) {
+func (r *UserRepository) GetUsers(ctx context.Context, q dto.BaseFilters) ([]User, int, error) {
 	var users []User
 
 	count, err := r.db.NewSelect().
