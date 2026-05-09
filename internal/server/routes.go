@@ -21,11 +21,13 @@ func Container(r *gin.Engine, db *bun.DB, redis *redis.Client, cfg *config.Confi
 	authSvc := service.NewAuthService(userRepo, emailSvc, redis, cfg)
 
 	categoryRepo := data.NewCategoryRepository(db)
+	productRepo := data.NewProductRepository(db)
 
 	apiVersion := r.Group("/api/v1")
 	setupAuthRoutes(apiVersion, authSvc)
 	setupUserRoutes(apiVersion, userRepo, authSvc, emailSvc, redis)
 	setupCategoryRoutes(apiVersion, categoryRepo, authSvc, emailSvc, redis)
+	setupProductRoutes(apiVersion, productRepo, authSvc, emailSvc, redis)
 }
 
 func setupAuthRoutes(rg *gin.RouterGroup, authSvc *service.AuthService) {
@@ -62,4 +64,20 @@ func setupCategoryRoutes(rg *gin.RouterGroup, categoryRepo *data.CategoryReposit
 	categoryRoute.DELETE("/:uuid", PermissionRequired(authSvc, "categories:delete"), categoryHandler.DeleteCategory)
 	categoryRoute.POST("/:uuid", PermissionRequired(authSvc, "categories:status"), categoryHandler.UpdateCategoryStatus)
 	categoryRoute.GET("/tree", PermissionRequired(authSvc, "categories:view"), categoryHandler.GetCategoryTree)
+}
+
+func setupProductRoutes(rg *gin.RouterGroup, productRepo *data.ProductRepository, authSvc *service.AuthService, emailSvc *service.EmailService, redis *redis.Client) {
+	productSvc := service.NewProduct(productRepo, emailSvc, redis)
+	productHandler := NewProductHandler(productSvc)
+
+	productRoute := rg.Group("/products")
+	productRoute.Use(AuthRequired(authSvc))
+
+	productRoute.GET("/public", productHandler.GetProductsPublic)
+	productRoute.GET("", PermissionRequired(authSvc, "products:view"), productHandler.GetProducts)
+	productRoute.GET("/:uuid", PermissionRequired(authSvc, "products:view"), productHandler.GetProductByUUID)
+	productRoute.PUT("/:uuid", PermissionRequired(authSvc, "products:edit"), productHandler.UpdateProduct)
+	productRoute.DELETE("/:uuid", PermissionRequired(authSvc, "products:delete"), productHandler.DeleteProduct)
+	productRoute.POST("/:uuid", PermissionRequired(authSvc, "products:status"), productHandler.UpdateProductStatus)
+	productRoute.GET("/backoffice", PermissionRequired(authSvc, "products:view"), productHandler.GetProductsBackoffice)
 }
