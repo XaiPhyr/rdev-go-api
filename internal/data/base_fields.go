@@ -10,11 +10,3 @@ type BaseFields struct {
 	UpdatedAt time.Time  `bun:"updated_at,notnull,default:current_timestamp" json:"updated_at"`
 	DeletedAt *time.Time `bun:",soft_delete,nullzero" json:"deleted_at"`
 }
-
-type BaseFilters struct {
-	Page     int    `json:"page" query:"page"`
-	PageSize int    `json:"page_size" query:"page_size"`
-	Sort     string `json:"sort" query:"sort"`
-	Status   string `json:"status" query:"status"`
-	Search   string `json:"search" query:"search"`
-}
