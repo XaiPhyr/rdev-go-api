@@ -6,8 +6,8 @@ import (
 	"os"
 	"strings"
 
-	"rdev-go-api/internal/config"
-	"rdev-go-api/internal/data"
+	"github.com/XaiPhyr/rdev-go-api/internal/config"
+	"github.com/XaiPhyr/rdev-go-api/internal/data"
 
 	"github.com/uptrace/bun/migrate"
 )

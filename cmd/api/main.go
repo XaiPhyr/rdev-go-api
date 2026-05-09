@@ -4,8 +4,9 @@ import (
 	"flag"
 	"fmt"
 	"log"
-	"rdev-go-api/internal/config"
-	"rdev-go-api/internal/server"
+
+	"github.com/XaiPhyr/rdev-go-api/internal/config"
+	"github.com/XaiPhyr/rdev-go-api/internal/server"
 
 	"github.com/gin-gonic/gin"
 )

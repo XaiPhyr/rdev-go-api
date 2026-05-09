@@ -1,9 +1,9 @@
 package server
 
 import (
-	"rdev-go-api/internal/config"
-	"rdev-go-api/internal/data"
-	"rdev-go-api/internal/service"
+	"github.com/XaiPhyr/rdev-go-api/internal/config"
+	"github.com/XaiPhyr/rdev-go-api/internal/data"
+	"github.com/XaiPhyr/rdev-go-api/internal/service"
 
 	"github.com/gin-gonic/gin"
 	"github.com/redis/go-redis/v9"

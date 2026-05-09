@@ -2,8 +2,9 @@ package service
 
 import (
 	"context"
-	"rdev-go-api/internal/data"
-	"rdev-go-api/internal/dto"
+
+	"github.com/XaiPhyr/rdev-go-api/internal/data"
+	"github.com/XaiPhyr/rdev-go-api/internal/dto"
 
 	"github.com/redis/go-redis/v9"
 )

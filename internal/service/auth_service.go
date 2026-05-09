@@ -4,10 +4,11 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"rdev-go-api/internal/config"
-	"rdev-go-api/internal/data"
-	"rdev-go-api/internal/dto"
 	"time"
+
+	"github.com/XaiPhyr/rdev-go-api/internal/config"
+	"github.com/XaiPhyr/rdev-go-api/internal/data"
+	"github.com/XaiPhyr/rdev-go-api/internal/dto"
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/redis/go-redis/v9"

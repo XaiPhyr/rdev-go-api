@@ -1,4 +1,4 @@
-module rdev-go-api
+module github.com/XaiPhyr/rdev-go-api
 
 go 1.26.2
 

@@ -2,8 +2,9 @@ package server
 
 import (
 	"net/http"
-	"rdev-go-api/internal/service"
 	"strings"
+
+	"github.com/XaiPhyr/rdev-go-api/internal/service"
 
 	"github.com/gin-gonic/gin"
 )
