@@ -8,9 +8,9 @@ type Category struct {
 
 	Name     string `bun:"name" json:"name"`
 	Slug     string `bun:"slug" json:"slug"`
-	ParentID int    `bun:"parent_id" json:"parent_id"`
-	Depth    string `bun:",scanonly" json:"depth"`
-	FullPath string `bun:",scanonly" json:"full_path"`
+	ParentID int    `bun:"parent_id" json:"parent_id,omitempty"`
+	Depth    string `bun:",scanonly" json:"depth,omitempty"`
+	FullPath string `bun:",scanonly" json:"full_path,omitempty"`
 }
 
 type CategoryTree struct {
