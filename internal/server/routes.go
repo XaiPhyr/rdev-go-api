@@ -22,12 +22,14 @@ func Container(r *gin.Engine, db *bun.DB, redis *redis.Client, cfg *config.Confi
 
 	categoryRepo := data.NewCategoryRepository(db)
 	productRepo := data.NewProductRepository(db)
+	inventoryRepo := data.NewInventoryRepository(db)
 
 	apiVersion := r.Group("/api/v1")
 	setupAuthRoutes(apiVersion, authSvc)
 	setupUserRoutes(apiVersion, userRepo, authSvc, emailSvc, redis)
 	setupCategoryRoutes(apiVersion, categoryRepo, authSvc, emailSvc, redis)
 	setupProductRoutes(apiVersion, productRepo, authSvc, emailSvc, redis)
+	setupInventoryRoutes(apiVersion, inventoryRepo, authSvc, emailSvc, redis)
 }
 
 func setupAuthRoutes(rg *gin.RouterGroup, authSvc *service.AuthService) {
@@ -80,4 +82,18 @@ func setupProductRoutes(rg *gin.RouterGroup, productRepo *data.ProductRepository
 	productRoute.DELETE("/:uuid", PermissionRequired(authSvc, "products:delete"), productHandler.DeleteProduct)
 	productRoute.POST("/:uuid", PermissionRequired(authSvc, "products:status"), productHandler.UpdateProductStatus)
 	productRoute.GET("/backoffice", PermissionRequired(authSvc, "products:view"), productHandler.GetProductsBackoffice)
+}
+
+func setupInventoryRoutes(rg *gin.RouterGroup, inventoryRepo *data.InventoryRepository, authSvc *service.AuthService, emailSvc *service.EmailService, redis *redis.Client) {
+	inventorySvc := service.NewInventory(inventoryRepo, emailSvc, redis)
+	inventoryHandler := NewInventoryHandler(inventorySvc)
+
+	inventoryRoute := rg.Group("/inventories")
+	inventoryRoute.Use(AuthRequired(authSvc))
+
+	inventoryRoute.GET("", PermissionRequired(authSvc, "inventories:view"), inventoryHandler.GetInventories)
+	inventoryRoute.GET("/:uuid", PermissionRequired(authSvc, "inventories:view"), inventoryHandler.GetInventoryByUUID)
+	inventoryRoute.PUT("/:uuid", PermissionRequired(authSvc, "inventories:edit"), inventoryHandler.UpdateInventory)
+	inventoryRoute.DELETE("/:uuid", PermissionRequired(authSvc, "inventories:delete"), inventoryHandler.DeleteInventory)
+	inventoryRoute.POST("/:uuid", PermissionRequired(authSvc, "inventories:status"), inventoryHandler.UpdateInventoryStatus)
 }
