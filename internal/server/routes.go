@@ -78,6 +78,7 @@ func setupProductRoutes(rg *gin.RouterGroup, productRepo *data.ProductRepository
 	productRoute.GET("/public", productHandler.GetProductsPublic)
 	productRoute.GET("", PermissionRequired(authSvc, "products:view"), productHandler.GetProducts)
 	productRoute.GET("/:uuid", PermissionRequired(authSvc, "products:view"), productHandler.GetProductByUUID)
+	productRoute.POST("", PermissionRequired(authSvc, "products:create"), productHandler.CreateProduct)
 	productRoute.PUT("/:uuid", PermissionRequired(authSvc, "products:edit"), productHandler.UpdateProduct)
 	productRoute.DELETE("/:uuid", PermissionRequired(authSvc, "products:delete"), productHandler.DeleteProduct)
 	productRoute.POST("/:uuid", PermissionRequired(authSvc, "products:status"), productHandler.UpdateProductStatus)

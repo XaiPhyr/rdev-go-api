@@ -127,14 +127,26 @@ func (r *ProductRepository) GetProductsBackoffice(ctx context.Context, q dto.Bas
 	return items, count, nil
 }
 
-func (r *ProductRepository) CreateProduct(ctx context.Context, product *Product) error {
-	res, err := r.db.NewInsert().Model(product).Exec(ctx)
+func (r *ProductRepository) CreateProduct(ctx context.Context, product *Product, initQty int64) error {
+	return r.db.RunInTx(ctx, nil, func(ctx context.Context, tx bun.Tx) error {
+		if _, err := tx.NewInsert().Model(product).Exec(ctx); err != nil {
+			return err
+		}
 
-	if rows, _ := res.RowsAffected(); rows == 0 {
-		return sql.ErrNoRows
-	}
+		inventory := &Inventory{
+			ProductID:         product.ID,
+			Quantity:          initQty,
+			LowStockThreshold: 5,
+		}
 
-	return err
+		if _, err := tx.NewInsert().Model(inventory).Exec(ctx); err != nil {
+			return err
+		}
+
+		// Stock Movement here
+
+		return nil
+	})
 }
 
 func (r *ProductRepository) UpdateProduct(ctx context.Context, product *Product) error {

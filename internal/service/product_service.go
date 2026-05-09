@@ -41,7 +41,42 @@ func (s *ProductService) GetProductsBackoffice(ctx context.Context, q dto.Query)
 	return s.r.GetProductsBackoffice(ctx, filters)
 }
 
-func (s *ProductService) UpdateProduct(ctx context.Context, uuid string, req dto.ProductRequestUpdate) error {
+func (s *ProductService) CreateProduct(ctx context.Context, req dto.ProductRequest) error {
+	product := &data.Product{}
+	var qty int64 = 0
+
+	if req.CategoryID != nil {
+		product.CategoryID = *req.CategoryID
+	}
+	if req.Name != nil {
+		product.Name = *req.Name
+	}
+	if req.Slug != nil {
+		product.Slug = *req.Slug
+	}
+	if req.Description != nil {
+		product.Description = *req.Description
+	}
+	if req.SKU != nil {
+		product.SKU = *req.SKU
+	}
+	if req.Barcode != nil {
+		product.Barcode = *req.Barcode
+	}
+	if req.Price != nil {
+		product.Price = *req.Price
+	}
+	if req.CostPrice != nil {
+		product.CostPrice = *req.CostPrice
+	}
+	if req.Quantity != nil {
+		qty = *req.Quantity
+	}
+
+	return s.r.CreateProduct(ctx, product, qty)
+}
+
+func (s *ProductService) UpdateProduct(ctx context.Context, uuid string, req dto.ProductRequest) error {
 	product, err := s.r.GetProductByUUID(ctx, uuid)
 	if err != nil {
 		return err

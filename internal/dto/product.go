@@ -1,6 +1,6 @@
 package dto
 
-type ProductRequestUpdate struct {
+type ProductRequest struct {
 	CategoryID  *int64  `json:"category_id"`
 	Name        *string `json:"name"`
 	Slug        *string `json:"slug"`
@@ -9,6 +9,7 @@ type ProductRequestUpdate struct {
 	Barcode     *string `json:"barcode"`
 	Price       *int64  `json:"price"`
 	CostPrice   *int64  `json:"cost_price"`
+	Quantity    *int64  `json:"quantity"`
 }
 
 // Public API response (for customer)

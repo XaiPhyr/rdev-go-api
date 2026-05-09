@@ -83,10 +83,26 @@ func (h *ProductHandler) GetProductsBackoffice(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, gin.H{"data": products, "count": count})
 }
 
+func (h *ProductHandler) CreateProduct(ctx *gin.Context) {
+	var req dto.ProductRequest
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		responseErr(ctx, http.StatusBadRequest, "internal server error")
+		return
+	}
+
+	err := h.svc.CreateProduct(ctx, req)
+	if err != nil {
+		responseErr(ctx, http.StatusBadRequest, "internal server error")
+		return
+	}
+
+	ctx.JSON(http.StatusCreated, gin.H{"message": "success"})
+}
+
 func (h *ProductHandler) UpdateProduct(ctx *gin.Context) {
 	uuid := ctx.Param("uuid")
 
-	var req dto.ProductRequestUpdate
+	var req dto.ProductRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
 		responseErr(ctx, http.StatusBadRequest, "internal server error")
 		return
