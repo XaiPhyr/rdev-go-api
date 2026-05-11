@@ -10,10 +10,10 @@ import (
 )
 
 type InventoryHandler struct {
-	svc *service.InventoryService
+	svc service.InventoryService
 }
 
-func NewInventoryHandler(svc *service.InventoryService) *InventoryHandler {
+func NewInventoryHandler(svc service.InventoryService) *InventoryHandler {
 	return &InventoryHandler{svc: svc}
 }
 

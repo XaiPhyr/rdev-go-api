@@ -9,27 +9,45 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
-type UserService struct {
-	r     *data.UserRepository
+type UserRepository interface {
+	GetUserByUUID(ctx context.Context, uuid string) (*data.User, error)
+	GetUsers(ctx context.Context, filters dto.BaseFilters) ([]data.User, int, error)
+	CreateUser(ctx context.Context, category *data.User) error
+	UpdateUser(ctx context.Context, category *data.User) error
+	DeleteUser(ctx context.Context, uuid string) error
+	UpdateUserStatus(ctx context.Context, uuid string) error
+}
+
+type UserService interface {
+	GetUserByUUID(ctx context.Context, uuid string) (*data.User, error)
+	GetUsers(ctx context.Context, q dto.Query) ([]data.User, int, error)
+	CreateUser(ctx context.Context, req dto.UserRequest) error
+	UpdateUser(ctx context.Context, uuid string, req dto.UserRequest) error
+	DeleteUser(ctx context.Context, uuid string) error
+	UpdateUserStatus(ctx context.Context, uuid string) error
+}
+
+type userService struct {
+	r     UserRepository
 	es    *EmailService
 	redis *redis.Client
 }
 
-func NewUserService(r *data.UserRepository, es *EmailService, redis *redis.Client) *UserService {
-	return &UserService{r: r, es: es, redis: redis}
+func NewUserService(r UserRepository, es *EmailService, redis *redis.Client) *userService {
+	return &userService{r: r, es: es, redis: redis}
 }
 
-func (s *UserService) GetUserByUUID(ctx context.Context, uuid string) (*data.User, error) {
+func (s *userService) GetUserByUUID(ctx context.Context, uuid string) (*data.User, error) {
 	return s.r.GetUserByUUID(ctx, uuid)
 }
 
-func (s *UserService) GetUsers(ctx context.Context, q dto.Query) ([]data.User, int, error) {
+func (s *userService) GetUsers(ctx context.Context, q dto.Query) ([]data.User, int, error) {
 	filters := q.SanitizeQuery([]string{"first_name", "last_name", "email", "username"})
 
 	return s.r.GetUsers(ctx, filters)
 }
 
-func (s *UserService) CreateUser(ctx context.Context, req dto.UserRequest) error {
+func (s *userService) CreateUser(ctx context.Context, req dto.UserRequest) error {
 	user := &data.User{}
 
 	if req.FirstName != nil {
@@ -48,7 +66,7 @@ func (s *UserService) CreateUser(ctx context.Context, req dto.UserRequest) error
 	return s.r.CreateUser(ctx, user)
 }
 
-func (s *UserService) UpdateUser(ctx context.Context, uuid string, req dto.UserRequest) error {
+func (s *userService) UpdateUser(ctx context.Context, uuid string, req dto.UserRequest) error {
 	user, err := s.r.GetUserByUUID(ctx, uuid)
 	if err != nil {
 		return err
@@ -67,10 +85,10 @@ func (s *UserService) UpdateUser(ctx context.Context, uuid string, req dto.UserR
 	return s.r.UpdateUser(ctx, user)
 }
 
-func (s *UserService) DeleteUser(ctx context.Context, uuid string) error {
+func (s *userService) DeleteUser(ctx context.Context, uuid string) error {
 	return s.r.DeleteUser(ctx, uuid)
 }
 
-func (s *UserService) UpdateUserStatus(ctx context.Context, uuid string) error {
+func (s *userService) UpdateUserStatus(ctx context.Context, uuid string) error {
 	return s.r.UpdateUserStatus(ctx, uuid)
 }

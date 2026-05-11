@@ -10,27 +10,45 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
-type StockMovementService struct {
-	r     *data.StockMovementRepository
+type StockMovementRepository interface {
+	GetStockMovementByUUID(ctx context.Context, uuid string) (*data.StockMovement, error)
+	GetStockMovements(ctx context.Context, filters dto.BaseFilters) ([]data.StockMovement, int, error)
+	CreateStockMovement(ctx context.Context, sm *data.StockMovement) error
+	UpdateStockMovement(ctx context.Context, sm *data.StockMovement) error
+	DeleteStockMovement(ctx context.Context, uuid string) error
+	UpdateStockMovementStatus(ctx context.Context, uuid string) error
+}
+
+type StockMovementService interface {
+	GetStockMovementByUUID(ctx context.Context, uuid string) (*data.StockMovement, error)
+	GetStockMovements(ctx context.Context, q dto.Query) ([]data.StockMovement, int, error)
+	CreateStockMovement(ctx context.Context, req dto.StockMovementRequest) error
+	UpdateStockMovement(ctx context.Context, uuid string, req dto.StockMovementRequest) error
+	DeleteStockMovement(ctx context.Context, uuid string) error
+	UpdateStockMovementStatus(ctx context.Context, uuid string) error
+}
+
+type stockMovementService struct {
+	r     StockMovementRepository
 	es    *EmailService
 	redis *redis.Client
 }
 
-func NewStockMovementService(r *data.StockMovementRepository, es *EmailService, redis *redis.Client) *StockMovementService {
-	return &StockMovementService{r: r, es: es, redis: redis}
+func NewStockMovementService(r StockMovementRepository, es *EmailService, redis *redis.Client) *stockMovementService {
+	return &stockMovementService{r: r, es: es, redis: redis}
 }
 
-func (s *StockMovementService) GetStockMovementByUUID(ctx context.Context, uuid string) (*data.StockMovement, error) {
+func (s *stockMovementService) GetStockMovementByUUID(ctx context.Context, uuid string) (*data.StockMovement, error) {
 	return s.r.GetStockMovementByUUID(ctx, uuid)
 }
 
-func (s *StockMovementService) GetStockMovements(ctx context.Context, q dto.Query) ([]data.StockMovement, int, error) {
+func (s *stockMovementService) GetStockMovements(ctx context.Context, q dto.Query) ([]data.StockMovement, int, error) {
 	filters := q.SanitizeQuery([]string{"change_amount", "reason", "reference_id"})
 
 	return s.r.GetStockMovements(ctx, filters)
 }
 
-func (s *StockMovementService) CreateStockMovement(ctx context.Context, req dto.StockMovementRequest) error {
+func (s *stockMovementService) CreateStockMovement(ctx context.Context, req dto.StockMovementRequest) error {
 	sm := &data.StockMovement{}
 
 	if req.ProductID != nil {
@@ -49,7 +67,7 @@ func (s *StockMovementService) CreateStockMovement(ctx context.Context, req dto.
 	return s.r.CreateStockMovement(ctx, sm)
 }
 
-func (s *StockMovementService) UpdateStockMovement(ctx context.Context, uuid string, req dto.StockMovementRequest) error {
+func (s *stockMovementService) UpdateStockMovement(ctx context.Context, uuid string, req dto.StockMovementRequest) error {
 	sm, err := s.r.GetStockMovementByUUID(ctx, uuid)
 	if err != nil {
 		return err
@@ -71,10 +89,10 @@ func (s *StockMovementService) UpdateStockMovement(ctx context.Context, uuid str
 	return s.r.UpdateStockMovement(ctx, sm)
 }
 
-func (s *StockMovementService) DeleteStockMovement(ctx context.Context, uuid string) error {
+func (s *stockMovementService) DeleteStockMovement(ctx context.Context, uuid string) error {
 	return s.r.DeleteStockMovement(ctx, uuid)
 }
 
-func (s *StockMovementService) UpdateStockMovementStatus(ctx context.Context, uuid string) error {
+func (s *stockMovementService) UpdateStockMovementStatus(ctx context.Context, uuid string) error {
 	return s.r.UpdateStockMovementStatus(ctx, uuid)
 }

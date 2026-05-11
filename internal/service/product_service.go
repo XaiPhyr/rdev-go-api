@@ -9,39 +9,61 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
-type ProductService struct {
-	r     *data.ProductRepository
+type ProductRepository interface {
+	GetProductByUUID(ctx context.Context, uuid string) (*data.Product, error)
+	GetProducts(ctx context.Context, filters dto.BaseFilters) ([]data.Product, int, error)
+	GetProductsPublic(ctx context.Context, q dto.BaseFilters) ([]dto.ProductPublicResponse, int, error)
+	GetProductsBackoffice(ctx context.Context, q dto.BaseFilters) ([]dto.ProductBackofficeResponse, int, error)
+	CreateProduct(ctx context.Context, category *data.Product, initQty int64) error
+	UpdateProduct(ctx context.Context, category *data.Product) error
+	DeleteProduct(ctx context.Context, uuid string) error
+	UpdateProductStatus(ctx context.Context, uuid string) error
+}
+
+type ProductService interface {
+	GetProductByUUID(ctx context.Context, uuid string) (*data.Product, error)
+	GetProducts(ctx context.Context, q dto.Query) ([]data.Product, int, error)
+	GetProductsPublic(ctx context.Context, q dto.Query) ([]dto.ProductPublicResponse, int, error)
+	GetProductsBackoffice(ctx context.Context, q dto.Query) ([]dto.ProductBackofficeResponse, int, error)
+	CreateProduct(ctx context.Context, req dto.ProductRequest) error
+	UpdateProduct(ctx context.Context, uuid string, req dto.ProductRequest) error
+	DeleteProduct(ctx context.Context, uuid string) error
+	UpdateProductStatus(ctx context.Context, uuid string) error
+}
+
+type productService struct {
+	r     ProductRepository
 	es    *EmailService
 	redis *redis.Client
 }
 
-func NewProductService(r *data.ProductRepository, es *EmailService, redis *redis.Client) *ProductService {
-	return &ProductService{r: r, es: es, redis: redis}
+func NewProductService(r ProductRepository, es *EmailService, redis *redis.Client) *productService {
+	return &productService{r: r, es: es, redis: redis}
 }
 
-func (s *ProductService) GetProductByUUID(ctx context.Context, uuid string) (*data.Product, error) {
+func (s *productService) GetProductByUUID(ctx context.Context, uuid string) (*data.Product, error) {
 	return s.r.GetProductByUUID(ctx, uuid)
 }
 
-func (s *ProductService) GetProducts(ctx context.Context, q dto.Query) ([]data.Product, int, error) {
+func (s *productService) GetProducts(ctx context.Context, q dto.Query) ([]data.Product, int, error) {
 	filters := q.SanitizeQuery([]string{"name", "barcode"})
 
 	return s.r.GetProducts(ctx, filters)
 }
 
-func (s *ProductService) GetProductsPublic(ctx context.Context, q dto.Query) ([]dto.ProductPublicResponse, int, error) {
+func (s *productService) GetProductsPublic(ctx context.Context, q dto.Query) ([]dto.ProductPublicResponse, int, error) {
 	filters := q.SanitizeQuery([]string{"name", "barcode"})
 
 	return s.r.GetProductsPublic(ctx, filters)
 }
 
-func (s *ProductService) GetProductsBackoffice(ctx context.Context, q dto.Query) ([]dto.ProductBackofficeResponse, int, error) {
+func (s *productService) GetProductsBackoffice(ctx context.Context, q dto.Query) ([]dto.ProductBackofficeResponse, int, error) {
 	filters := q.SanitizeQuery([]string{"name", "barcode"})
 
 	return s.r.GetProductsBackoffice(ctx, filters)
 }
 
-func (s *ProductService) CreateProduct(ctx context.Context, req dto.ProductRequest) error {
+func (s *productService) CreateProduct(ctx context.Context, req dto.ProductRequest) error {
 	product := &data.Product{}
 	var qty int64 = 0
 
@@ -76,7 +98,7 @@ func (s *ProductService) CreateProduct(ctx context.Context, req dto.ProductReque
 	return s.r.CreateProduct(ctx, product, qty)
 }
 
-func (s *ProductService) UpdateProduct(ctx context.Context, uuid string, req dto.ProductRequest) error {
+func (s *productService) UpdateProduct(ctx context.Context, uuid string, req dto.ProductRequest) error {
 	product, err := s.r.GetProductByUUID(ctx, uuid)
 	if err != nil {
 		return err
@@ -110,10 +132,10 @@ func (s *ProductService) UpdateProduct(ctx context.Context, uuid string, req dto
 	return s.r.UpdateProduct(ctx, product)
 }
 
-func (s *ProductService) DeleteProduct(ctx context.Context, uuid string) error {
+func (s *productService) DeleteProduct(ctx context.Context, uuid string) error {
 	return s.r.DeleteProduct(ctx, uuid)
 }
 
-func (s *ProductService) UpdateProductStatus(ctx context.Context, uuid string) error {
+func (s *productService) UpdateProductStatus(ctx context.Context, uuid string) error {
 	return s.r.UpdateProductStatus(ctx, uuid)
 }

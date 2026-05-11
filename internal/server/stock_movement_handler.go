@@ -10,10 +10,10 @@ import (
 )
 
 type StockMovementHandler struct {
-	svc *service.StockMovementService
+	svc service.StockMovementService
 }
 
-func NewStockMovementHandler(svc *service.StockMovementService) *StockMovementHandler {
+func NewStockMovementHandler(svc service.StockMovementService) *StockMovementHandler {
 	return &StockMovementHandler{svc: svc}
 }
 
