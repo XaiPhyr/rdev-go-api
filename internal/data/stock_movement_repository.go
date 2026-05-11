@@ -62,7 +62,7 @@ func (r *StockMovementRepository) CreateStockMovement(ctx context.Context, sm *S
 func (r *StockMovementRepository) UpdateStockMovement(ctx context.Context, sm *StockMovement) error {
 	res, err := r.db.NewUpdate().
 		Model(sm).
-		Column("product_id", "quantity", "low_stock_threshold").
+		Column("product_id", "change_amount", "reason", "reference_id").
 		Set("updated_at = ?", time.Now()).
 		WherePK().
 		Exec(ctx)
