@@ -15,7 +15,7 @@ type ProductService struct {
 	redis *redis.Client
 }
 
-func NewProduct(r *data.ProductRepository, es *EmailService, redis *redis.Client) *ProductService {
+func NewProductService(r *data.ProductRepository, es *EmailService, redis *redis.Client) *ProductService {
 	return &ProductService{r: r, es: es, redis: redis}
 }
 

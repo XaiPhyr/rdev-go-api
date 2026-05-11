@@ -57,7 +57,7 @@ func setupUserRoutes(rg *gin.RouterGroup, userRepo *data.UserRepository, authSvc
 }
 
 func setupCategoryRoutes(rg *gin.RouterGroup, categoryRepo *data.CategoryRepository, authSvc *service.AuthService, emailSvc *service.EmailService, redis *redis.Client) {
-	categorySvc := service.NewCategory(categoryRepo, emailSvc, redis)
+	categorySvc := service.NewCategoryService(categoryRepo, emailSvc, redis)
 	categoryHandler := NewCategoryHandler(categorySvc)
 
 	categoryRoute := rg.Group("/categories")
@@ -73,7 +73,7 @@ func setupCategoryRoutes(rg *gin.RouterGroup, categoryRepo *data.CategoryReposit
 }
 
 func setupProductRoutes(rg *gin.RouterGroup, productRepo *data.ProductRepository, authSvc *service.AuthService, emailSvc *service.EmailService, redis *redis.Client) {
-	productSvc := service.NewProduct(productRepo, emailSvc, redis)
+	productSvc := service.NewProductService(productRepo, emailSvc, redis)
 	productHandler := NewProductHandler(productSvc)
 
 	productRoute := rg.Group("/products")
@@ -90,7 +90,7 @@ func setupProductRoutes(rg *gin.RouterGroup, productRepo *data.ProductRepository
 }
 
 func setupInventoryRoutes(rg *gin.RouterGroup, inventoryRepo *data.InventoryRepository, authSvc *service.AuthService, emailSvc *service.EmailService, redis *redis.Client) {
-	inventorySvc := service.NewInventory(inventoryRepo, emailSvc, redis)
+	inventorySvc := service.NewInventoryService(inventoryRepo, emailSvc, redis)
 	inventoryHandler := NewInventoryHandler(inventorySvc)
 
 	inventoryRoute := rg.Group("/inventories")
@@ -105,7 +105,7 @@ func setupInventoryRoutes(rg *gin.RouterGroup, inventoryRepo *data.InventoryRepo
 }
 
 func setupStockMovementRoutes(rg *gin.RouterGroup, stockMovementRepo *data.StockMovementRepository, authSvc *service.AuthService, emailSvc *service.EmailService, redis *redis.Client) {
-	stockMovementSvc := service.NewStockMovement(stockMovementRepo, emailSvc, redis)
+	stockMovementSvc := service.NewStockMovementService(stockMovementRepo, emailSvc, redis)
 	stockMovementHandler := NewStockMovementHandler(stockMovementSvc)
 
 	stockMovementRoute := rg.Group("/stock_movements")

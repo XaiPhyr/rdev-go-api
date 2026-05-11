@@ -15,7 +15,7 @@ type CategoryService struct {
 	redis *redis.Client
 }
 
-func NewCategory(r *data.CategoryRepository, es *EmailService, redis *redis.Client) *CategoryService {
+func NewCategoryService(r *data.CategoryRepository, es *EmailService, redis *redis.Client) *CategoryService {
 	return &CategoryService{r: r, es: es, redis: redis}
 }
 

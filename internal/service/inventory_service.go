@@ -15,7 +15,7 @@ type InventoryService struct {
 	redis *redis.Client
 }
 
-func NewInventory(r *data.InventoryRepository, es *EmailService, redis *redis.Client) *InventoryService {
+func NewInventoryService(r *data.InventoryRepository, es *EmailService, redis *redis.Client) *InventoryService {
 	return &InventoryService{r: r, es: es, redis: redis}
 }
 

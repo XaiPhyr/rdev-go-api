@@ -16,7 +16,7 @@ type StockMovementService struct {
 	redis *redis.Client
 }
 
-func NewStockMovement(r *data.StockMovementRepository, es *EmailService, redis *redis.Client) *StockMovementService {
+func NewStockMovementService(r *data.StockMovementRepository, es *EmailService, redis *redis.Client) *StockMovementService {
 	return &StockMovementService{r: r, es: es, redis: redis}
 }
 
