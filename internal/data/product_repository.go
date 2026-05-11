@@ -52,7 +52,7 @@ func (r *ProductRepository) GetProducts(ctx context.Context, q dto.BaseFilters) 
 	return products, count, nil
 }
 
-func (r *ProductRepository) GetProductsPublic(ctx context.Context, q dto.BaseFilters) ([]dto.ProductPublicResponse, int, error) {
+func (r *ProductRepository) GetProductsPublic(ctx context.Context, q dto.BaseFilters) ([]Product, int, error) {
 	var products []Product
 
 	count, err := r.db.NewSelect().
@@ -68,34 +68,10 @@ func (r *ProductRepository) GetProductsPublic(ctx context.Context, q dto.BaseFil
 		return nil, 0, err
 	}
 
-	items := make([]dto.ProductPublicResponse, len(products))
-	for i, p := range products {
-		items[i] = dto.ProductPublicResponse{
-			Name:         p.Name,
-			Slug:         p.Slug,
-			Description:  p.Description,
-			Barcode:      p.Barcode,
-			DisplayPrice: float64(p.Price) / 100.00,
-			Category:     &dto.CategoryPublicResponse{},
-		}
-
-		if p.Category != nil {
-			items[i].Category = &dto.CategoryPublicResponse{
-				Name: p.Category.Name,
-				Slug: p.Category.Slug,
-				UUID: p.Category.UUID,
-			}
-		}
-
-		if p.Inventory != nil {
-			items[i].Quantity = p.Inventory.Quantity
-		}
-	}
-
-	return items, count, nil
+	return products, count, nil
 }
 
-func (r *ProductRepository) GetProductsBackoffice(ctx context.Context, q dto.BaseFilters) ([]dto.ProductBackofficeResponse, int, error) {
+func (r *ProductRepository) GetProductsBackoffice(ctx context.Context, q dto.BaseFilters) ([]Product, int, error) {
 	var products []Product
 
 	count, err := r.db.NewSelect().
@@ -111,32 +87,7 @@ func (r *ProductRepository) GetProductsBackoffice(ctx context.Context, q dto.Bas
 		return nil, 0, err
 	}
 
-	items := make([]dto.ProductBackofficeResponse, len(products))
-	for i, p := range products {
-		items[i] = dto.ProductBackofficeResponse{
-			Name:         p.Name,
-			Slug:         p.Slug,
-			Description:  p.Description,
-			SKU:          p.SKU,
-			Barcode:      p.Barcode,
-			DisplayPrice: float64(p.Price) / 100.00,
-			Category:     &dto.CategoryPublicResponse{},
-		}
-
-		if p.Category != nil {
-			items[i].Category = &dto.CategoryPublicResponse{
-				Name: p.Category.Name,
-				Slug: p.Category.Slug,
-				UUID: p.Category.UUID,
-			}
-		}
-
-		if p.Inventory != nil {
-			items[i].Quantity = p.Inventory.Quantity
-		}
-	}
-
-	return items, count, nil
+	return products, count, nil
 }
 
 func (r *ProductRepository) CreateProduct(ctx context.Context, product *Product, initQty int64) error {

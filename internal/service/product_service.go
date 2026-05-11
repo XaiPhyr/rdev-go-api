@@ -12,8 +12,8 @@ import (
 type ProductRepository interface {
 	GetProductByUUID(ctx context.Context, uuid string) (*data.Product, error)
 	GetProducts(ctx context.Context, filters dto.BaseFilters) ([]data.Product, int, error)
-	GetProductsPublic(ctx context.Context, q dto.BaseFilters) ([]dto.ProductPublicResponse, int, error)
-	GetProductsBackoffice(ctx context.Context, q dto.BaseFilters) ([]dto.ProductBackofficeResponse, int, error)
+	GetProductsPublic(ctx context.Context, q dto.BaseFilters) ([]data.Product, int, error)
+	GetProductsBackoffice(ctx context.Context, q dto.BaseFilters) ([]data.Product, int, error)
 	CreateProduct(ctx context.Context, category *data.Product, initQty int64) error
 	UpdateProduct(ctx context.Context, category *data.Product) error
 	DeleteProduct(ctx context.Context, uuid string) error
@@ -54,13 +54,61 @@ func (s *productService) GetProducts(ctx context.Context, q dto.Query) ([]data.P
 func (s *productService) GetProductsPublic(ctx context.Context, q dto.Query) ([]dto.ProductPublicResponse, int, error) {
 	filters := q.SanitizeQuery([]string{"name", "barcode"})
 
-	return s.r.GetProductsPublic(ctx, filters)
+	products, count, err := s.r.GetProductsPublic(ctx, filters)
+	items := make([]dto.ProductPublicResponse, len(products))
+	for i, p := range products {
+		items[i] = dto.ProductPublicResponse{
+			Name:         p.Name,
+			Slug:         p.Slug,
+			Description:  p.Description,
+			Barcode:      p.Barcode,
+			DisplayPrice: float64(p.Price) / 100.00,
+			Category:     &dto.CategoryPublicResponse{},
+		}
+
+		if p.Category != nil {
+			items[i].Category = &dto.CategoryPublicResponse{
+				Name: p.Category.Name,
+				Slug: p.Category.Slug,
+				UUID: p.Category.UUID,
+			}
+		}
+	}
+
+	return items, count, err
 }
 
 func (s *productService) GetProductsBackoffice(ctx context.Context, q dto.Query) ([]dto.ProductBackofficeResponse, int, error) {
 	filters := q.SanitizeQuery([]string{"name", "barcode"})
 
-	return s.r.GetProductsBackoffice(ctx, filters)
+	products, count, err := s.r.GetProductsBackoffice(ctx, filters)
+
+	items := make([]dto.ProductBackofficeResponse, len(products))
+	for i, p := range products {
+		items[i] = dto.ProductBackofficeResponse{
+			Name:         p.Name,
+			Slug:         p.Slug,
+			Description:  p.Description,
+			SKU:          p.SKU,
+			Barcode:      p.Barcode,
+			DisplayPrice: float64(p.Price) / 100.00,
+			Category:     &dto.CategoryPublicResponse{},
+		}
+
+		if p.Category != nil {
+			items[i].Category = &dto.CategoryPublicResponse{
+				Name: p.Category.Name,
+				Slug: p.Category.Slug,
+				UUID: p.Category.UUID,
+			}
+		}
+
+		if p.Inventory != nil {
+			items[i].Quantity = p.Inventory.Quantity
+		}
+	}
+
+	return items, count, err
 }
 
 func (s *productService) CreateProduct(ctx context.Context, req dto.ProductRequest) error {

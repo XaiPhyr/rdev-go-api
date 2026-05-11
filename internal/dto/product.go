@@ -20,7 +20,6 @@ type ProductPublicResponse struct {
 	Description  string                  `json:"description"`
 	Barcode      string                  `json:"barcode"`
 	DisplayPrice float64                 `json:"display_price"`
-	Quantity     int64                   `json:"quantity"`
 }
 
 // Backoffice API response (for staff)
