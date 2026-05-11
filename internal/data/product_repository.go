@@ -39,6 +39,7 @@ func (r *ProductRepository) GetProducts(ctx context.Context, q dto.BaseFilters) 
 		Model(&products).
 		Relation("Category").
 		Relation("Inventory").
+		Relation("StockMovement").
 		Limit(q.PageSize).
 		Offset(q.Page).
 		Order(q.Sort).
@@ -154,7 +155,15 @@ func (r *ProductRepository) CreateProduct(ctx context.Context, product *Product,
 			return err
 		}
 
-		// Stock Movement here
+		stock_movement := &StockMovement{
+			ProductID:    product.ID,
+			ChangeAmount: initQty,
+			Reason:       "INITIAL_STOCKS",
+		}
+
+		if _, err := tx.NewInsert().Model(stock_movement).Exec(ctx); err != nil {
+			return err
+		}
 
 		return nil
 	})
