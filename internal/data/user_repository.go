@@ -55,6 +55,11 @@ func (r *UserRepository) CheckUserPermission(ctx context.Context, userID int64, 
 		SELECT EXISTS (
 			SELECT 1 
 			FROM role_hierarchy rh
+			JOIN roles r ON r.id = rh.role_id
+			WHERE r.name = 'super_admin'
+			UNION ALL
+			SELECT 1 
+			FROM role_hierarchy rh
 			JOIN role_permissions rp ON rp.role_id = rh.role_id
 			JOIN permissions p ON p.id = rp.permission_id
 			WHERE p.slug = ?
