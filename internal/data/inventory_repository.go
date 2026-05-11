@@ -50,11 +50,7 @@ func (r *InventoryRepository) GetInventories(ctx context.Context, q dto.BaseFilt
 }
 
 func (r *InventoryRepository) CreateInventory(ctx context.Context, inventory *Inventory) error {
-	res, err := r.db.NewInsert().Model(inventory).Exec(ctx)
-
-	if rows, _ := res.RowsAffected(); rows == 0 {
-		return sql.ErrNoRows
-	}
+	_, err := r.db.NewInsert().Model(inventory).Exec(ctx)
 
 	return err
 }

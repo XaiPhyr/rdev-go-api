@@ -71,11 +71,7 @@ func (r *CategoryRepository) GetCategoryTree(ctx context.Context, q dto.BaseFilt
 }
 
 func (r *CategoryRepository) CreateCategory(ctx context.Context, category *Category) error {
-	res, err := r.db.NewInsert().Model(category).Exec(ctx)
-
-	if rows, _ := res.RowsAffected(); rows == 0 {
-		return sql.ErrNoRows
-	}
+	_, err := r.db.NewInsert().Model(category).Exec(ctx)
 
 	return err
 }

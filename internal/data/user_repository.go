@@ -122,11 +122,7 @@ func (r *UserRepository) GetUsers(ctx context.Context, q dto.BaseFilters) ([]Use
 }
 
 func (r *UserRepository) CreateUser(ctx context.Context, user *User) error {
-	res, err := r.db.NewInsert().Model(user).Exec(ctx)
-
-	if rows, _ := res.RowsAffected(); rows == 0 {
-		return sql.ErrNoRows
-	}
+	_, err := r.db.NewInsert().Model(user).Exec(ctx)
 
 	return err
 }
@@ -134,6 +130,7 @@ func (r *UserRepository) CreateUser(ctx context.Context, user *User) error {
 func (r *UserRepository) UpdateUser(ctx context.Context, user *User) error {
 	res, err := r.db.NewUpdate().
 		Model(user).
+		Column("first_name", "last_name", "email", "username").
 		Set("updated_at = ?", time.Now()).
 		WherePK().
 		Exec(ctx)

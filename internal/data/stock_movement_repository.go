@@ -50,11 +50,7 @@ func (r *StockMovementRepository) GetStockMovements(ctx context.Context, q dto.B
 }
 
 func (r *StockMovementRepository) CreateStockMovement(ctx context.Context, sm *StockMovement) error {
-	res, err := r.db.NewInsert().Model(sm).Exec(ctx)
-
-	if rows, _ := res.RowsAffected(); rows == 0 {
-		return sql.ErrNoRows
-	}
+	_, err := r.db.NewInsert().Model(sm).Exec(ctx)
 
 	return err
 }
