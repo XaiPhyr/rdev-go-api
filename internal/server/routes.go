@@ -23,6 +23,7 @@ func Container(r *gin.Engine, db *bun.DB, redis *redis.Client, cfg *config.Confi
 	categoryRepo := data.NewCategoryRepository(db)
 	productRepo := data.NewProductRepository(db)
 	inventoryRepo := data.NewInventoryRepository(db)
+	stockMovementRepo := data.NewStockMovementRepository(db)
 
 	apiVersion := r.Group("/api/v1")
 	setupAuthRoutes(apiVersion, authSvc)
@@ -30,6 +31,7 @@ func Container(r *gin.Engine, db *bun.DB, redis *redis.Client, cfg *config.Confi
 	setupCategoryRoutes(apiVersion, categoryRepo, authSvc, emailSvc, redis)
 	setupProductRoutes(apiVersion, productRepo, authSvc, emailSvc, redis)
 	setupInventoryRoutes(apiVersion, inventoryRepo, authSvc, emailSvc, redis)
+	setupStockMovementRoutes(apiVersion, stockMovementRepo, authSvc, emailSvc, redis)
 }
 
 func setupAuthRoutes(rg *gin.RouterGroup, authSvc *service.AuthService) {
@@ -100,4 +102,19 @@ func setupInventoryRoutes(rg *gin.RouterGroup, inventoryRepo *data.InventoryRepo
 	inventoryRoute.PUT("/:uuid", PermissionRequired(authSvc, "inventories:edit"), inventoryHandler.UpdateInventory)
 	inventoryRoute.DELETE("/:uuid", PermissionRequired(authSvc, "inventories:delete"), inventoryHandler.DeleteInventory)
 	inventoryRoute.POST("/:uuid", PermissionRequired(authSvc, "inventories:status"), inventoryHandler.UpdateInventoryStatus)
+}
+
+func setupStockMovementRoutes(rg *gin.RouterGroup, stockMovementRepo *data.StockMovementRepository, authSvc *service.AuthService, emailSvc *service.EmailService, redis *redis.Client) {
+	stockMovementSvc := service.NewStockMovement(stockMovementRepo, emailSvc, redis)
+	stockMovementHandler := NewStockMovementHandler(stockMovementSvc)
+
+	stockMovementRoute := rg.Group("/stock_movements")
+	stockMovementRoute.Use(AuthRequired(authSvc))
+
+	stockMovementRoute.GET("", PermissionRequired(authSvc, "stock_movements:view"), stockMovementHandler.GetStockMovements)
+	stockMovementRoute.GET("/:uuid", PermissionRequired(authSvc, "stock_movements:view"), stockMovementHandler.GetStockMovementByUUID)
+	stockMovementRoute.POST("", PermissionRequired(authSvc, "stock_movements:create"), stockMovementHandler.CreateStockMovement)
+	stockMovementRoute.PUT("/:uuid", PermissionRequired(authSvc, "stock_movements:edit"), stockMovementHandler.UpdateStockMovement)
+	stockMovementRoute.DELETE("/:uuid", PermissionRequired(authSvc, "stock_movements:delete"), stockMovementHandler.DeleteStockMovement)
+	stockMovementRoute.POST("/:uuid", PermissionRequired(authSvc, "stock_movements:status"), stockMovementHandler.UpdateStockMovementStatus)
 }
