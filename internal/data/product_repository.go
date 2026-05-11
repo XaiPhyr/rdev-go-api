@@ -38,6 +38,7 @@ func (r *ProductRepository) GetProducts(ctx context.Context, q dto.BaseFilters) 
 	count, err := r.db.NewSelect().
 		Model(&products).
 		Relation("Category").
+		Relation("Inventory").
 		Limit(q.PageSize).
 		Offset(q.Page).
 		Order(q.Sort).
@@ -56,6 +57,7 @@ func (r *ProductRepository) GetProductsPublic(ctx context.Context, q dto.BaseFil
 	count, err := r.db.NewSelect().
 		Model(&products).
 		Relation("Category").
+		Relation("Inventory").
 		Limit(q.PageSize).
 		Offset(q.Page).
 		Order(q.Sort).
@@ -65,7 +67,7 @@ func (r *ProductRepository) GetProductsPublic(ctx context.Context, q dto.BaseFil
 		return nil, 0, err
 	}
 
-	items := make([]dto.ProductPublicResponse, count)
+	items := make([]dto.ProductPublicResponse, len(products))
 	for i, p := range products {
 		items[i] = dto.ProductPublicResponse{
 			Name:         p.Name,
@@ -83,6 +85,10 @@ func (r *ProductRepository) GetProductsPublic(ctx context.Context, q dto.BaseFil
 				UUID: p.Category.UUID,
 			}
 		}
+
+		if p.Inventory != nil {
+			items[i].Quantity = p.Inventory.Quantity
+		}
 	}
 
 	return items, count, nil
@@ -94,6 +100,7 @@ func (r *ProductRepository) GetProductsBackoffice(ctx context.Context, q dto.Bas
 	count, err := r.db.NewSelect().
 		Model(&products).
 		Relation("Category").
+		Relation("Inventory").
 		Limit(q.PageSize).
 		Offset(q.Page).
 		Order(q.Sort).
@@ -103,7 +110,7 @@ func (r *ProductRepository) GetProductsBackoffice(ctx context.Context, q dto.Bas
 		return nil, 0, err
 	}
 
-	items := make([]dto.ProductBackofficeResponse, count)
+	items := make([]dto.ProductBackofficeResponse, len(products))
 	for i, p := range products {
 		items[i] = dto.ProductBackofficeResponse{
 			Name:         p.Name,
@@ -121,6 +128,10 @@ func (r *ProductRepository) GetProductsBackoffice(ctx context.Context, q dto.Bas
 				Slug: p.Category.Slug,
 				UUID: p.Category.UUID,
 			}
+		}
+
+		if p.Inventory != nil {
+			items[i].Quantity = p.Inventory.Quantity
 		}
 	}
 
