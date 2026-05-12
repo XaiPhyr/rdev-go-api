@@ -4,7 +4,7 @@ CREATE TABLE IF NOT EXISTS audit_logs (
     path TEXT DEFAULT NULL,
     action VARCHAR(45) DEFAULT NULL,
     response_status INT DEFAULT 0,
-    module_id UUID DEFAULT NULL,
+    module_id TEXT DEFAULT NULL,
     module VARCHAR(45) DEFAULT NULL,
     before_change JSONB DEFAULT NULL,
     after_change JSONB DEFAULT NULL,
