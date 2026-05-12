@@ -1,6 +1,8 @@
 package server
 
 import (
+	"context"
+
 	"github.com/XaiPhyr/rdev-go-api/internal/config"
 	"github.com/XaiPhyr/rdev-go-api/internal/data"
 	"github.com/XaiPhyr/rdev-go-api/internal/service"
@@ -17,6 +19,10 @@ import (
 func Container(r *gin.Engine, db *bun.DB, redis *redis.Client, cfg *config.Config) {
 	emailSvc := service.NewEmailService(cfg.SMTP.Host, cfg.SMTP.Port, cfg.SMTP.From)
 
+	auditLogRepo := data.NewAuditLogRepository(db)
+	auditLogSvc := service.NewAuditLogService(auditLogRepo)
+	go auditLogSvc.QueAuditLog(context.Background())
+
 	userRepo := data.NewUserRepository(db)
 	authSvc := service.NewAuthService(userRepo, emailSvc, redis, cfg)
 
@@ -28,7 +34,7 @@ func Container(r *gin.Engine, db *bun.DB, redis *redis.Client, cfg *config.Confi
 	apiVersion := r.Group("/api/v1")
 	setupAuthRoutes(apiVersion, authSvc)
 	setupUserRoutes(apiVersion, userRepo, authSvc, emailSvc, redis)
-	setupCategoryRoutes(apiVersion, categoryRepo, authSvc, emailSvc, redis)
+	setupCategoryRoutes(apiVersion, categoryRepo, authSvc, emailSvc, redis, auditLogSvc)
 	setupProductRoutes(apiVersion, productRepo, authSvc, emailSvc, redis)
 	setupInventoryRoutes(apiVersion, inventoryRepo, authSvc, emailSvc, redis)
 	setupStockMovementRoutes(apiVersion, stockMovementRepo, authSvc, emailSvc, redis)
@@ -53,11 +59,11 @@ func setupUserRoutes(rg *gin.RouterGroup, userRepo *data.UserRepository, authSvc
 	userRoute.POST("", PermissionRequired(authSvc, "users:create"), userHandler.CreateUser)
 	userRoute.PUT("/:uuid", PermissionRequired(authSvc, "users:edit"), userHandler.UpdateUser)
 	userRoute.DELETE("/:uuid", PermissionRequired(authSvc, "users:delete"), userHandler.DeleteUser)
-	userRoute.POST("/:uuid", PermissionRequired(authSvc, "users:status"), userHandler.UpdateUserStatus)
+	userRoute.POST("/updatestatus/:uuid", PermissionRequired(authSvc, "users:status"), userHandler.UpdateUserStatus)
 }
 
-func setupCategoryRoutes(rg *gin.RouterGroup, categoryRepo *data.CategoryRepository, authSvc *service.AuthService, emailSvc *service.EmailService, redis *redis.Client) {
-	categorySvc := service.NewCategoryService(categoryRepo, emailSvc, redis)
+func setupCategoryRoutes(rg *gin.RouterGroup, categoryRepo *data.CategoryRepository, authSvc *service.AuthService, emailSvc *service.EmailService, redis *redis.Client, auditLog service.AuditLogService) {
+	categorySvc := service.NewCategoryService(categoryRepo, emailSvc, redis, auditLog)
 	categoryHandler := NewCategoryHandler(categorySvc)
 
 	categoryRoute := rg.Group("/categories")
@@ -68,7 +74,7 @@ func setupCategoryRoutes(rg *gin.RouterGroup, categoryRepo *data.CategoryReposit
 	categoryRoute.POST("", PermissionRequired(authSvc, "categories:create"), categoryHandler.CreateCategory)
 	categoryRoute.PUT("/:uuid", PermissionRequired(authSvc, "categories:edit"), categoryHandler.UpdateCategory)
 	categoryRoute.DELETE("/:uuid", PermissionRequired(authSvc, "categories:delete"), categoryHandler.DeleteCategory)
-	categoryRoute.POST("/:uuid", PermissionRequired(authSvc, "categories:status"), categoryHandler.UpdateCategoryStatus)
+	categoryRoute.POST("/updatestatus/:uuid", PermissionRequired(authSvc, "categories:status"), categoryHandler.UpdateCategoryStatus)
 	categoryRoute.GET("/tree", PermissionRequired(authSvc, "categories:view"), categoryHandler.GetCategoryTree)
 }
 
@@ -85,7 +91,7 @@ func setupProductRoutes(rg *gin.RouterGroup, productRepo *data.ProductRepository
 	productRoute.POST("", PermissionRequired(authSvc, "products:create"), productHandler.CreateProduct)
 	productRoute.PUT("/:uuid", PermissionRequired(authSvc, "products:edit"), productHandler.UpdateProduct)
 	productRoute.DELETE("/:uuid", PermissionRequired(authSvc, "products:delete"), productHandler.DeleteProduct)
-	productRoute.POST("/:uuid", PermissionRequired(authSvc, "products:status"), productHandler.UpdateProductStatus)
+	productRoute.POST("/updatestatus/:uuid", PermissionRequired(authSvc, "products:status"), productHandler.UpdateProductStatus)
 	productRoute.GET("/backoffice", PermissionRequired(authSvc, "products:view"), productHandler.GetProductsBackoffice)
 }
 
@@ -101,7 +107,7 @@ func setupInventoryRoutes(rg *gin.RouterGroup, inventoryRepo *data.InventoryRepo
 	inventoryRoute.POST("", PermissionRequired(authSvc, "inventories:create"), inventoryHandler.CreateInventory)
 	inventoryRoute.PUT("/:uuid", PermissionRequired(authSvc, "inventories:edit"), inventoryHandler.UpdateInventory)
 	inventoryRoute.DELETE("/:uuid", PermissionRequired(authSvc, "inventories:delete"), inventoryHandler.DeleteInventory)
-	inventoryRoute.POST("/:uuid", PermissionRequired(authSvc, "inventories:status"), inventoryHandler.UpdateInventoryStatus)
+	inventoryRoute.POST("/updatestatus/:uuid", PermissionRequired(authSvc, "inventories:status"), inventoryHandler.UpdateInventoryStatus)
 }
 
 func setupStockMovementRoutes(rg *gin.RouterGroup, stockMovementRepo *data.StockMovementRepository, authSvc *service.AuthService, emailSvc *service.EmailService, redis *redis.Client) {
@@ -116,5 +122,5 @@ func setupStockMovementRoutes(rg *gin.RouterGroup, stockMovementRepo *data.Stock
 	stockMovementRoute.POST("", PermissionRequired(authSvc, "stock_movements:create"), stockMovementHandler.CreateStockMovement)
 	stockMovementRoute.PUT("/:uuid", PermissionRequired(authSvc, "stock_movements:edit"), stockMovementHandler.UpdateStockMovement)
 	stockMovementRoute.DELETE("/:uuid", PermissionRequired(authSvc, "stock_movements:delete"), stockMovementHandler.DeleteStockMovement)
-	stockMovementRoute.POST("/:uuid", PermissionRequired(authSvc, "stock_movements:status"), stockMovementHandler.UpdateStockMovementStatus)
+	stockMovementRoute.POST("/updatestatus/:uuid", PermissionRequired(authSvc, "stock_movements:status"), stockMovementHandler.UpdateStockMovementStatus)
 }
