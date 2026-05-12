@@ -2,7 +2,6 @@ package data
 
 import (
 	"context"
-	"database/sql"
 	"time"
 
 	"github.com/XaiPhyr/rdev-go-api/internal/dto"
@@ -56,44 +55,32 @@ func (r *InventoryRepository) CreateInventory(ctx context.Context, inventory *In
 }
 
 func (r *InventoryRepository) UpdateInventory(ctx context.Context, inventory *Inventory) error {
-	res, err := r.db.NewUpdate().
+	_, err := r.db.NewUpdate().
 		Model(inventory).
 		Column("product_id", "quantity", "low_stock_threshold").
 		Set("updated_at = ?", time.Now()).
 		WherePK().
 		Exec(ctx)
 
-	if rows, _ := res.RowsAffected(); rows == 0 {
-		return sql.ErrNoRows
-	}
-
 	return err
 }
 
 func (r *InventoryRepository) DeleteInventory(ctx context.Context, uuid string) error {
-	res, err := r.db.NewDelete().
+	_, err := r.db.NewDelete().
 		Model((*Inventory)(nil)).
 		Where("uuid = ?", uuid).
 		Exec(ctx)
-
-	if rows, _ := res.RowsAffected(); rows == 0 {
-		return sql.ErrNoRows
-	}
 
 	return err
 }
 
 func (r *InventoryRepository) UpdateInventoryStatus(ctx context.Context, uuid string) error {
-	res, err := r.db.NewUpdate().
+	_, err := r.db.NewUpdate().
 		Model((*Inventory)(nil)).
 		Set("status = CASE WHEN status = 'A' THEN 'I' ELSE 'A' END").
 		Set("updated_at = ?", time.Now()).
 		Where("uuid = ?", uuid).
 		Exec(ctx)
-
-	if rows, _ := res.RowsAffected(); rows == 0 {
-		return sql.ErrNoRows
-	}
 
 	return err
 }

@@ -2,7 +2,6 @@ package data
 
 import (
 	"context"
-	"database/sql"
 	"time"
 
 	"github.com/XaiPhyr/rdev-go-api/internal/dto"
@@ -128,44 +127,32 @@ func (r *UserRepository) CreateUser(ctx context.Context, user *User) error {
 }
 
 func (r *UserRepository) UpdateUser(ctx context.Context, user *User) error {
-	res, err := r.db.NewUpdate().
+	_, err := r.db.NewUpdate().
 		Model(user).
 		Column("first_name", "last_name", "email", "username").
 		Set("updated_at = ?", time.Now()).
 		WherePK().
 		Exec(ctx)
 
-	if rows, _ := res.RowsAffected(); rows == 0 {
-		return sql.ErrNoRows
-	}
-
 	return err
 }
 
 func (r *UserRepository) DeleteUser(ctx context.Context, uuid string) error {
-	res, err := r.db.NewDelete().
+	_, err := r.db.NewDelete().
 		Model((*User)(nil)).
 		Where("uuid = ?", uuid).
 		Exec(ctx)
-
-	if rows, _ := res.RowsAffected(); rows == 0 {
-		return sql.ErrNoRows
-	}
 
 	return err
 }
 
 func (r *UserRepository) UpdateUserStatus(ctx context.Context, uuid string) error {
-	res, err := r.db.NewUpdate().
+	_, err := r.db.NewUpdate().
 		Model((*User)(nil)).
 		Set("status = CASE WHEN status = 'A' THEN 'I' ELSE 'A' END").
 		Set("updated_at = ?", time.Now()).
 		Where("uuid = ?", uuid).
 		Exec(ctx)
-
-	if rows, _ := res.RowsAffected(); rows == 0 {
-		return sql.ErrNoRows
-	}
 
 	return err
 }

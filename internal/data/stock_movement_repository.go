@@ -2,7 +2,6 @@ package data
 
 import (
 	"context"
-	"database/sql"
 	"time"
 
 	"github.com/XaiPhyr/rdev-go-api/internal/dto"
@@ -56,44 +55,32 @@ func (r *StockMovementRepository) CreateStockMovement(ctx context.Context, sm *S
 }
 
 func (r *StockMovementRepository) UpdateStockMovement(ctx context.Context, sm *StockMovement) error {
-	res, err := r.db.NewUpdate().
+	_, err := r.db.NewUpdate().
 		Model(sm).
 		Column("product_id", "change_amount", "reason", "reference_id").
 		Set("updated_at = ?", time.Now()).
 		WherePK().
 		Exec(ctx)
 
-	if rows, _ := res.RowsAffected(); rows == 0 {
-		return sql.ErrNoRows
-	}
-
 	return err
 }
 
 func (r *StockMovementRepository) DeleteStockMovement(ctx context.Context, uuid string) error {
-	res, err := r.db.NewDelete().
+	_, err := r.db.NewDelete().
 		Model((*StockMovement)(nil)).
 		Where("uuid = ?", uuid).
 		Exec(ctx)
-
-	if rows, _ := res.RowsAffected(); rows == 0 {
-		return sql.ErrNoRows
-	}
 
 	return err
 }
 
 func (r *StockMovementRepository) UpdateStockMovementStatus(ctx context.Context, uuid string) error {
-	res, err := r.db.NewUpdate().
+	_, err := r.db.NewUpdate().
 		Model((*StockMovement)(nil)).
 		Set("status = CASE WHEN status = 'A' THEN 'I' ELSE 'A' END").
 		Set("updated_at = ?", time.Now()).
 		Where("uuid = ?", uuid).
 		Exec(ctx)
-
-	if rows, _ := res.RowsAffected(); rows == 0 {
-		return sql.ErrNoRows
-	}
 
 	return err
 }
