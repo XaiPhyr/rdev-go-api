@@ -58,7 +58,7 @@ func (h *StockMovementHandler) CreateStockMovement(ctx *gin.Context) {
 		return
 	}
 
-	err := h.svc.CreateStockMovement(ctx.Request.Context(), req)
+	err := h.svc.CreateStockMovement(ctx.Request.Context(), req, parseAuditLog(ctx))
 	if err != nil {
 		responseErr(ctx, http.StatusBadRequest, "internal server error")
 		return
@@ -76,7 +76,7 @@ func (h *StockMovementHandler) UpdateStockMovement(ctx *gin.Context) {
 		return
 	}
 
-	err := h.svc.UpdateStockMovement(ctx.Request.Context(), uuid, req)
+	err := h.svc.UpdateStockMovement(ctx.Request.Context(), uuid, req, parseAuditLog(ctx))
 	if err != nil {
 		responseErr(ctx, http.StatusBadRequest, "internal server error")
 		return
@@ -88,7 +88,7 @@ func (h *StockMovementHandler) UpdateStockMovement(ctx *gin.Context) {
 func (h *StockMovementHandler) DeleteStockMovement(ctx *gin.Context) {
 	uuid := ctx.Param("uuid")
 
-	err := h.svc.DeleteStockMovement(ctx.Request.Context(), uuid)
+	err := h.svc.DeleteStockMovement(ctx.Request.Context(), uuid, parseAuditLog(ctx))
 	if err != nil {
 		responseErr(ctx, http.StatusBadRequest, "internal server error")
 		return
@@ -100,7 +100,7 @@ func (h *StockMovementHandler) DeleteStockMovement(ctx *gin.Context) {
 func (h *StockMovementHandler) UpdateStockMovementStatus(ctx *gin.Context) {
 	uuid := ctx.Param("uuid")
 
-	err := h.svc.UpdateStockMovementStatus(ctx.Request.Context(), uuid)
+	err := h.svc.UpdateStockMovementStatus(ctx.Request.Context(), uuid, parseAuditLog(ctx))
 	if err != nil {
 		responseErr(ctx, http.StatusBadRequest, "internal server error")
 		return

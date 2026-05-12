@@ -21,20 +21,21 @@ type UserRepository interface {
 type UserService interface {
 	GetUserByUUID(ctx context.Context, uuid string) (*data.User, error)
 	GetUsers(ctx context.Context, q dto.Query) ([]data.User, int, error)
-	CreateUser(ctx context.Context, req dto.UserRequest) error
-	UpdateUser(ctx context.Context, uuid string, req dto.UserRequest) error
-	DeleteUser(ctx context.Context, uuid string) error
-	UpdateUserStatus(ctx context.Context, uuid string) error
+	CreateUser(ctx context.Context, req dto.UserRequest, audit dto.AuditLogRequest) error
+	UpdateUser(ctx context.Context, uuid string, req dto.UserRequest, audit dto.AuditLogRequest) error
+	DeleteUser(ctx context.Context, uuid string, audit dto.AuditLogRequest) error
+	UpdateUserStatus(ctx context.Context, uuid string, audit dto.AuditLogRequest) error
 }
 
 type userService struct {
-	r     UserRepository
-	es    *EmailService
-	redis *redis.Client
+	r        UserRepository
+	es       *EmailService
+	redis    *redis.Client
+	auditLog AuditLogService
 }
 
-func NewUserService(r UserRepository, es *EmailService, redis *redis.Client) *userService {
-	return &userService{r: r, es: es, redis: redis}
+func NewUserService(r UserRepository, es *EmailService, redis *redis.Client, auditLog AuditLogService) *userService {
+	return &userService{r: r, es: es, redis: redis, auditLog: auditLog}
 }
 
 func (s *userService) GetUserByUUID(ctx context.Context, uuid string) (*data.User, error) {
@@ -47,7 +48,7 @@ func (s *userService) GetUsers(ctx context.Context, q dto.Query) ([]data.User, i
 	return s.r.GetUsers(ctx, filters)
 }
 
-func (s *userService) CreateUser(ctx context.Context, req dto.UserRequest) error {
+func (s *userService) CreateUser(ctx context.Context, req dto.UserRequest, audit dto.AuditLogRequest) error {
 	user := &data.User{}
 
 	if req.FirstName != nil {
@@ -63,14 +64,19 @@ func (s *userService) CreateUser(ctx context.Context, req dto.UserRequest) error
 		user.Email = *req.Email
 	}
 
-	return s.r.CreateUser(ctx, user)
+	err := s.r.CreateUser(ctx, user)
+	s.auditLog.CreateAuditLog(parseAuditLog(audit, user.UUID, "USER", nil, *user, err))
+
+	return err
 }
 
-func (s *userService) UpdateUser(ctx context.Context, uuid string, req dto.UserRequest) error {
+func (s *userService) UpdateUser(ctx context.Context, uuid string, req dto.UserRequest, audit dto.AuditLogRequest) error {
 	user, err := s.r.GetUserByUUID(ctx, uuid)
 	if err != nil {
 		return err
 	}
+
+	oldUser := *user
 
 	if req.FirstName != nil {
 		user.FirstName = *req.FirstName
@@ -82,13 +88,32 @@ func (s *userService) UpdateUser(ctx context.Context, uuid string, req dto.UserR
 		user.Username = *req.Username
 	}
 
-	return s.r.UpdateUser(ctx, user)
+	err = s.r.UpdateUser(ctx, user)
+	s.auditLog.CreateAuditLog(parseAuditLog(audit, user.UUID, "USER", oldUser, *user, err))
+
+	return err
 }
 
-func (s *userService) DeleteUser(ctx context.Context, uuid string) error {
-	return s.r.DeleteUser(ctx, uuid)
+func (s *userService) DeleteUser(ctx context.Context, uuid string, audit dto.AuditLogRequest) error {
+	user, err := s.r.GetUserByUUID(ctx, uuid)
+	if err != nil {
+		return err
+	}
+
+	err = s.r.DeleteUser(ctx, uuid)
+	s.auditLog.CreateAuditLog(parseAuditLog(audit, uuid, "USER", nil, user, err))
+
+	return err
 }
 
-func (s *userService) UpdateUserStatus(ctx context.Context, uuid string) error {
-	return s.r.UpdateUserStatus(ctx, uuid)
+func (s *userService) UpdateUserStatus(ctx context.Context, uuid string, audit dto.AuditLogRequest) error {
+	user, err := s.r.GetUserByUUID(ctx, uuid)
+	if err != nil {
+		return err
+	}
+
+	err = s.r.UpdateUserStatus(ctx, uuid)
+	s.auditLog.CreateAuditLog(parseAuditLog(audit, uuid, "USER", nil, user, err))
+
+	return err
 }

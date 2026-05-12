@@ -58,7 +58,7 @@ func (h *UserHandler) CreateUser(ctx *gin.Context) {
 		return
 	}
 
-	err := h.svc.CreateUser(ctx.Request.Context(), req)
+	err := h.svc.CreateUser(ctx.Request.Context(), req, parseAuditLog(ctx))
 	if err != nil {
 		responseErr(ctx, http.StatusBadRequest, "internal server error")
 		return
@@ -76,7 +76,7 @@ func (h *UserHandler) UpdateUser(ctx *gin.Context) {
 		return
 	}
 
-	err := h.svc.UpdateUser(ctx.Request.Context(), uuid, req)
+	err := h.svc.UpdateUser(ctx.Request.Context(), uuid, req, parseAuditLog(ctx))
 	if err != nil {
 		responseErr(ctx, http.StatusBadRequest, "internal server error")
 		return
@@ -88,7 +88,7 @@ func (h *UserHandler) UpdateUser(ctx *gin.Context) {
 func (h *UserHandler) DeleteUser(ctx *gin.Context) {
 	uuid := ctx.Param("uuid")
 
-	err := h.svc.DeleteUser(ctx.Request.Context(), uuid)
+	err := h.svc.DeleteUser(ctx.Request.Context(), uuid, parseAuditLog(ctx))
 	if err != nil {
 		responseErr(ctx, http.StatusBadRequest, "internal server error")
 		return
@@ -100,7 +100,7 @@ func (h *UserHandler) DeleteUser(ctx *gin.Context) {
 func (h *UserHandler) UpdateUserStatus(ctx *gin.Context) {
 	uuid := ctx.Param("uuid")
 
-	err := h.svc.UpdateUserStatus(ctx.Request.Context(), uuid)
+	err := h.svc.UpdateUserStatus(ctx.Request.Context(), uuid, parseAuditLog(ctx))
 	if err != nil {
 		responseErr(ctx, http.StatusBadRequest, "internal server error")
 		return

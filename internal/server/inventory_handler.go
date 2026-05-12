@@ -58,7 +58,7 @@ func (h *InventoryHandler) CreateInventory(ctx *gin.Context) {
 		return
 	}
 
-	err := h.svc.CreateInventory(ctx.Request.Context(), req)
+	err := h.svc.CreateInventory(ctx.Request.Context(), req, parseAuditLog(ctx))
 	if err != nil {
 		responseErr(ctx, http.StatusBadRequest, "internal server error")
 		return
@@ -76,7 +76,7 @@ func (h *InventoryHandler) UpdateInventory(ctx *gin.Context) {
 		return
 	}
 
-	err := h.svc.UpdateInventory(ctx.Request.Context(), uuid, req)
+	err := h.svc.UpdateInventory(ctx.Request.Context(), uuid, req, parseAuditLog(ctx))
 	if err != nil {
 		responseErr(ctx, http.StatusBadRequest, "internal server error")
 		return
@@ -88,7 +88,7 @@ func (h *InventoryHandler) UpdateInventory(ctx *gin.Context) {
 func (h *InventoryHandler) DeleteInventory(ctx *gin.Context) {
 	uuid := ctx.Param("uuid")
 
-	err := h.svc.DeleteInventory(ctx.Request.Context(), uuid)
+	err := h.svc.DeleteInventory(ctx.Request.Context(), uuid, parseAuditLog(ctx))
 	if err != nil {
 		responseErr(ctx, http.StatusBadRequest, "internal server error")
 		return
@@ -100,7 +100,7 @@ func (h *InventoryHandler) DeleteInventory(ctx *gin.Context) {
 func (h *InventoryHandler) UpdateInventoryStatus(ctx *gin.Context) {
 	uuid := ctx.Param("uuid")
 
-	err := h.svc.UpdateInventoryStatus(ctx.Request.Context(), uuid)
+	err := h.svc.UpdateInventoryStatus(ctx.Request.Context(), uuid, parseAuditLog(ctx))
 	if err != nil {
 		responseErr(ctx, http.StatusBadRequest, "internal server error")
 		return

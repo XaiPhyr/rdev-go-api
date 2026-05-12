@@ -33,11 +33,11 @@ func Container(r *gin.Engine, db *bun.DB, redis *redis.Client, cfg *config.Confi
 
 	apiVersion := r.Group("/api/v1")
 	setupAuthRoutes(apiVersion, authSvc)
-	setupUserRoutes(apiVersion, userRepo, authSvc, emailSvc, redis)
+	setupUserRoutes(apiVersion, userRepo, authSvc, emailSvc, redis, auditLogSvc)
 	setupCategoryRoutes(apiVersion, categoryRepo, authSvc, emailSvc, redis, auditLogSvc)
-	setupProductRoutes(apiVersion, productRepo, authSvc, emailSvc, redis)
-	setupInventoryRoutes(apiVersion, inventoryRepo, authSvc, emailSvc, redis)
-	setupStockMovementRoutes(apiVersion, stockMovementRepo, authSvc, emailSvc, redis)
+	setupProductRoutes(apiVersion, productRepo, authSvc, emailSvc, redis, auditLogSvc)
+	setupInventoryRoutes(apiVersion, inventoryRepo, authSvc, emailSvc, redis, auditLogSvc)
+	setupStockMovementRoutes(apiVersion, stockMovementRepo, authSvc, emailSvc, redis, auditLogSvc)
 }
 
 func setupAuthRoutes(rg *gin.RouterGroup, authSvc *service.AuthService) {
@@ -47,8 +47,8 @@ func setupAuthRoutes(rg *gin.RouterGroup, authSvc *service.AuthService) {
 	rg.POST("/register", authHandler.Register)
 }
 
-func setupUserRoutes(rg *gin.RouterGroup, userRepo *data.UserRepository, authSvc *service.AuthService, emailSvc *service.EmailService, redis *redis.Client) {
-	userSvc := service.NewUserService(userRepo, emailSvc, redis)
+func setupUserRoutes(rg *gin.RouterGroup, userRepo *data.UserRepository, authSvc *service.AuthService, emailSvc *service.EmailService, redis *redis.Client, auditLog service.AuditLogService) {
+	userSvc := service.NewUserService(userRepo, emailSvc, redis, auditLog)
 	userHandler := NewUserHandler(userSvc)
 
 	userRoute := rg.Group("/users")
@@ -78,8 +78,8 @@ func setupCategoryRoutes(rg *gin.RouterGroup, categoryRepo *data.CategoryReposit
 	categoryRoute.GET("/tree", PermissionRequired(authSvc, "categories:view"), categoryHandler.GetCategoryTree)
 }
 
-func setupProductRoutes(rg *gin.RouterGroup, productRepo *data.ProductRepository, authSvc *service.AuthService, emailSvc *service.EmailService, redis *redis.Client) {
-	productSvc := service.NewProductService(productRepo, emailSvc, redis)
+func setupProductRoutes(rg *gin.RouterGroup, productRepo *data.ProductRepository, authSvc *service.AuthService, emailSvc *service.EmailService, redis *redis.Client, auditLog service.AuditLogService) {
+	productSvc := service.NewProductService(productRepo, emailSvc, redis, auditLog)
 	productHandler := NewProductHandler(productSvc)
 
 	productRoute := rg.Group("/products")
@@ -95,8 +95,8 @@ func setupProductRoutes(rg *gin.RouterGroup, productRepo *data.ProductRepository
 	productRoute.GET("/backoffice", PermissionRequired(authSvc, "products:view"), productHandler.GetProductsBackoffice)
 }
 
-func setupInventoryRoutes(rg *gin.RouterGroup, inventoryRepo *data.InventoryRepository, authSvc *service.AuthService, emailSvc *service.EmailService, redis *redis.Client) {
-	inventorySvc := service.NewInventoryService(inventoryRepo, emailSvc, redis)
+func setupInventoryRoutes(rg *gin.RouterGroup, inventoryRepo *data.InventoryRepository, authSvc *service.AuthService, emailSvc *service.EmailService, redis *redis.Client, auditLog service.AuditLogService) {
+	inventorySvc := service.NewInventoryService(inventoryRepo, emailSvc, redis, auditLog)
 	inventoryHandler := NewInventoryHandler(inventorySvc)
 
 	inventoryRoute := rg.Group("/inventories")
@@ -110,8 +110,8 @@ func setupInventoryRoutes(rg *gin.RouterGroup, inventoryRepo *data.InventoryRepo
 	inventoryRoute.POST("/updatestatus/:uuid", PermissionRequired(authSvc, "inventories:status"), inventoryHandler.UpdateInventoryStatus)
 }
 
-func setupStockMovementRoutes(rg *gin.RouterGroup, stockMovementRepo *data.StockMovementRepository, authSvc *service.AuthService, emailSvc *service.EmailService, redis *redis.Client) {
-	stockMovementSvc := service.NewStockMovementService(stockMovementRepo, emailSvc, redis)
+func setupStockMovementRoutes(rg *gin.RouterGroup, stockMovementRepo *data.StockMovementRepository, authSvc *service.AuthService, emailSvc *service.EmailService, redis *redis.Client, auditLog service.AuditLogService) {
+	stockMovementSvc := service.NewStockMovementService(stockMovementRepo, emailSvc, redis, auditLog)
 	stockMovementHandler := NewStockMovementHandler(stockMovementSvc)
 
 	stockMovementRoute := rg.Group("/stock_movements")

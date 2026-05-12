@@ -25,20 +25,21 @@ type ProductService interface {
 	GetProducts(ctx context.Context, q dto.Query) ([]data.Product, int, error)
 	GetProductsPublic(ctx context.Context, q dto.Query) ([]dto.ProductPublicResponse, int, error)
 	GetProductsBackoffice(ctx context.Context, q dto.Query) ([]dto.ProductBackofficeResponse, int, error)
-	CreateProduct(ctx context.Context, req dto.ProductRequest) error
-	UpdateProduct(ctx context.Context, uuid string, req dto.ProductRequest) error
-	DeleteProduct(ctx context.Context, uuid string) error
-	UpdateProductStatus(ctx context.Context, uuid string) error
+	CreateProduct(ctx context.Context, req dto.ProductRequest, audit dto.AuditLogRequest) error
+	UpdateProduct(ctx context.Context, uuid string, req dto.ProductRequest, audit dto.AuditLogRequest) error
+	DeleteProduct(ctx context.Context, uuid string, audit dto.AuditLogRequest) error
+	UpdateProductStatus(ctx context.Context, uuid string, audit dto.AuditLogRequest) error
 }
 
 type productService struct {
-	r     ProductRepository
-	es    *EmailService
-	redis *redis.Client
+	r        ProductRepository
+	es       *EmailService
+	redis    *redis.Client
+	auditLog AuditLogService
 }
 
-func NewProductService(r ProductRepository, es *EmailService, redis *redis.Client) *productService {
-	return &productService{r: r, es: es, redis: redis}
+func NewProductService(r ProductRepository, es *EmailService, redis *redis.Client, auditLog AuditLogService) *productService {
+	return &productService{r: r, es: es, redis: redis, auditLog: auditLog}
 }
 
 func (s *productService) GetProductByUUID(ctx context.Context, uuid string) (*data.Product, error) {
@@ -111,7 +112,7 @@ func (s *productService) GetProductsBackoffice(ctx context.Context, q dto.Query)
 	return items, count, err
 }
 
-func (s *productService) CreateProduct(ctx context.Context, req dto.ProductRequest) error {
+func (s *productService) CreateProduct(ctx context.Context, req dto.ProductRequest, audit dto.AuditLogRequest) error {
 	product := &data.Product{}
 	var qty int64 = 0
 
@@ -143,14 +144,19 @@ func (s *productService) CreateProduct(ctx context.Context, req dto.ProductReque
 		qty = *req.Quantity
 	}
 
-	return s.r.CreateProduct(ctx, product, qty)
+	err := s.r.CreateProduct(ctx, product, qty)
+	s.auditLog.CreateAuditLog(parseAuditLog(audit, product.UUID, "PRODUCT", nil, *product, err))
+
+	return err
 }
 
-func (s *productService) UpdateProduct(ctx context.Context, uuid string, req dto.ProductRequest) error {
+func (s *productService) UpdateProduct(ctx context.Context, uuid string, req dto.ProductRequest, audit dto.AuditLogRequest) error {
 	product, err := s.r.GetProductByUUID(ctx, uuid)
 	if err != nil {
 		return err
 	}
+
+	oldProduct := *product
 
 	if req.CategoryID != nil {
 		product.CategoryID = *req.CategoryID
@@ -177,13 +183,32 @@ func (s *productService) UpdateProduct(ctx context.Context, uuid string, req dto
 		product.CostPrice = *req.CostPrice
 	}
 
-	return s.r.UpdateProduct(ctx, product)
+	err = s.r.UpdateProduct(ctx, product)
+	s.auditLog.CreateAuditLog(parseAuditLog(audit, uuid, "PRODUCT", oldProduct, *product, err))
+
+	return err
 }
 
-func (s *productService) DeleteProduct(ctx context.Context, uuid string) error {
-	return s.r.DeleteProduct(ctx, uuid)
+func (s *productService) DeleteProduct(ctx context.Context, uuid string, audit dto.AuditLogRequest) error {
+	product, err := s.r.GetProductByUUID(ctx, uuid)
+	if err != nil {
+		return err
+	}
+
+	err = s.r.DeleteProduct(ctx, uuid)
+	s.auditLog.CreateAuditLog(parseAuditLog(audit, uuid, "PRODUCT", nil, *product, err))
+
+	return err
 }
 
-func (s *productService) UpdateProductStatus(ctx context.Context, uuid string) error {
-	return s.r.UpdateProductStatus(ctx, uuid)
+func (s *productService) UpdateProductStatus(ctx context.Context, uuid string, audit dto.AuditLogRequest) error {
+	product, err := s.r.GetProductByUUID(ctx, uuid)
+	if err != nil {
+		return err
+	}
+
+	err = s.r.UpdateProductStatus(ctx, uuid)
+	s.auditLog.CreateAuditLog(parseAuditLog(audit, uuid, "PRODUCT", nil, *product, err))
+
+	return err
 }

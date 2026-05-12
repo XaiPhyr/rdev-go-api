@@ -90,7 +90,7 @@ func (h *ProductHandler) CreateProduct(ctx *gin.Context) {
 		return
 	}
 
-	err := h.svc.CreateProduct(ctx, req)
+	err := h.svc.CreateProduct(ctx, req, parseAuditLog(ctx))
 	if err != nil {
 		responseErr(ctx, http.StatusBadRequest, "internal server error")
 		return
@@ -108,7 +108,7 @@ func (h *ProductHandler) UpdateProduct(ctx *gin.Context) {
 		return
 	}
 
-	err := h.svc.UpdateProduct(ctx.Request.Context(), uuid, req)
+	err := h.svc.UpdateProduct(ctx.Request.Context(), uuid, req, parseAuditLog(ctx))
 	if err != nil {
 		responseErr(ctx, http.StatusBadRequest, "internal server error")
 		return
@@ -120,7 +120,7 @@ func (h *ProductHandler) UpdateProduct(ctx *gin.Context) {
 func (h *ProductHandler) DeleteProduct(ctx *gin.Context) {
 	uuid := ctx.Param("uuid")
 
-	err := h.svc.DeleteProduct(ctx.Request.Context(), uuid)
+	err := h.svc.DeleteProduct(ctx.Request.Context(), uuid, parseAuditLog(ctx))
 	if err != nil {
 		responseErr(ctx, http.StatusBadRequest, "internal server error")
 		return
@@ -132,7 +132,7 @@ func (h *ProductHandler) DeleteProduct(ctx *gin.Context) {
 func (h *ProductHandler) UpdateProductStatus(ctx *gin.Context) {
 	uuid := ctx.Param("uuid")
 
-	err := h.svc.UpdateProductStatus(ctx.Request.Context(), uuid)
+	err := h.svc.UpdateProductStatus(ctx.Request.Context(), uuid, parseAuditLog(ctx))
 	if err != nil {
 		responseErr(ctx, http.StatusBadRequest, "internal server error")
 		return

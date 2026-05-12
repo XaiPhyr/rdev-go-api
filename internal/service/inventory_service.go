@@ -21,20 +21,21 @@ type InventoryRepository interface {
 type InventoryService interface {
 	GetInventoryByUUID(ctx context.Context, uuid string) (*data.Inventory, error)
 	GetInventories(ctx context.Context, q dto.Query) ([]data.Inventory, int, error)
-	CreateInventory(ctx context.Context, req dto.InventoryRequest) error
-	UpdateInventory(ctx context.Context, uuid string, req dto.InventoryRequest) error
-	DeleteInventory(ctx context.Context, uuid string) error
-	UpdateInventoryStatus(ctx context.Context, uuid string) error
+	CreateInventory(ctx context.Context, req dto.InventoryRequest, audit dto.AuditLogRequest) error
+	UpdateInventory(ctx context.Context, uuid string, req dto.InventoryRequest, audit dto.AuditLogRequest) error
+	DeleteInventory(ctx context.Context, uuid string, audit dto.AuditLogRequest) error
+	UpdateInventoryStatus(ctx context.Context, uuid string, audit dto.AuditLogRequest) error
 }
 
 type inventoryService struct {
-	r     InventoryRepository
-	es    *EmailService
-	redis *redis.Client
+	r        InventoryRepository
+	es       *EmailService
+	redis    *redis.Client
+	auditLog AuditLogService
 }
 
-func NewInventoryService(r InventoryRepository, es *EmailService, redis *redis.Client) *inventoryService {
-	return &inventoryService{r: r, es: es, redis: redis}
+func NewInventoryService(r InventoryRepository, es *EmailService, redis *redis.Client, auditLog AuditLogService) *inventoryService {
+	return &inventoryService{r: r, es: es, redis: redis, auditLog: auditLog}
 }
 
 func (s *inventoryService) GetInventoryByUUID(ctx context.Context, uuid string) (*data.Inventory, error) {
@@ -47,7 +48,7 @@ func (s *inventoryService) GetInventories(ctx context.Context, q dto.Query) ([]d
 	return s.r.GetInventories(ctx, filters)
 }
 
-func (s *inventoryService) CreateInventory(ctx context.Context, req dto.InventoryRequest) error {
+func (s *inventoryService) CreateInventory(ctx context.Context, req dto.InventoryRequest, audit dto.AuditLogRequest) error {
 	inventory := &data.Inventory{}
 
 	if req.ProductID != nil {
@@ -60,14 +61,19 @@ func (s *inventoryService) CreateInventory(ctx context.Context, req dto.Inventor
 		inventory.LowStockThreshold = *req.LowStockThreshold
 	}
 
-	return s.r.CreateInventory(ctx, inventory)
+	err := s.r.CreateInventory(ctx, inventory)
+	s.auditLog.CreateAuditLog(parseAuditLog(audit, inventory.UUID, "INVENTORY", nil, *inventory, err))
+
+	return err
 }
 
-func (s *inventoryService) UpdateInventory(ctx context.Context, uuid string, req dto.InventoryRequest) error {
+func (s *inventoryService) UpdateInventory(ctx context.Context, uuid string, req dto.InventoryRequest, audit dto.AuditLogRequest) error {
 	inventory, err := s.r.GetInventoryByUUID(ctx, uuid)
 	if err != nil {
 		return err
 	}
+
+	oldInventory := *inventory
 
 	if req.ProductID != nil {
 		inventory.ProductID = *req.ProductID
@@ -79,13 +85,32 @@ func (s *inventoryService) UpdateInventory(ctx context.Context, uuid string, req
 		inventory.LowStockThreshold = *req.LowStockThreshold
 	}
 
-	return s.r.UpdateInventory(ctx, inventory)
+	err = s.r.UpdateInventory(ctx, inventory)
+	s.auditLog.CreateAuditLog(parseAuditLog(audit, uuid, "INVENTORY", oldInventory, *inventory, err))
+
+	return err
 }
 
-func (s *inventoryService) DeleteInventory(ctx context.Context, uuid string) error {
-	return s.r.DeleteInventory(ctx, uuid)
+func (s *inventoryService) DeleteInventory(ctx context.Context, uuid string, audit dto.AuditLogRequest) error {
+	inventory, err := s.r.GetInventoryByUUID(ctx, uuid)
+	if err != nil {
+		return err
+	}
+
+	err = s.r.DeleteInventory(ctx, uuid)
+	s.auditLog.CreateAuditLog(parseAuditLog(audit, uuid, "INVENTORY", nil, *inventory, err))
+
+	return err
 }
 
-func (s *inventoryService) UpdateInventoryStatus(ctx context.Context, uuid string) error {
-	return s.r.UpdateInventoryStatus(ctx, uuid)
+func (s *inventoryService) UpdateInventoryStatus(ctx context.Context, uuid string, audit dto.AuditLogRequest) error {
+	inventory, err := s.r.GetInventoryByUUID(ctx, uuid)
+	if err != nil {
+		return err
+	}
+
+	err = s.r.UpdateInventoryStatus(ctx, uuid)
+	s.auditLog.CreateAuditLog(parseAuditLog(audit, uuid, "INVENTORY", nil, *inventory, err))
+
+	return err
 }
