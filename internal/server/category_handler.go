@@ -74,7 +74,7 @@ func (h *CategoryHandler) CreateCategory(ctx *gin.Context) {
 		return
 	}
 
-	err := h.svc.CreateCategory(ctx.Request.Context(), req)
+	err := h.svc.CreateCategory(ctx.Request.Context(), req, parseAuditLog(ctx))
 	if err != nil {
 		responseErr(ctx, http.StatusBadRequest, "internal server error")
 		return
@@ -92,7 +92,7 @@ func (h *CategoryHandler) UpdateCategory(ctx *gin.Context) {
 		return
 	}
 
-	err := h.svc.UpdateCategory(ctx.Request.Context(), uuid, req)
+	err := h.svc.UpdateCategory(ctx.Request.Context(), uuid, req, parseAuditLog(ctx))
 	if err != nil {
 		responseErr(ctx, http.StatusBadRequest, "internal server error")
 		return
@@ -104,7 +104,7 @@ func (h *CategoryHandler) UpdateCategory(ctx *gin.Context) {
 func (h *CategoryHandler) DeleteCategory(ctx *gin.Context) {
 	uuid := ctx.Param("uuid")
 
-	err := h.svc.DeleteCategory(ctx.Request.Context(), uuid)
+	err := h.svc.DeleteCategory(ctx.Request.Context(), uuid, parseAuditLog(ctx))
 	if err != nil {
 		responseErr(ctx, http.StatusBadRequest, "internal server error")
 		return
@@ -116,7 +116,7 @@ func (h *CategoryHandler) DeleteCategory(ctx *gin.Context) {
 func (h *CategoryHandler) UpdateCategoryStatus(ctx *gin.Context) {
 	uuid := ctx.Param("uuid")
 
-	err := h.svc.UpdateCategoryStatus(ctx.Request.Context(), uuid)
+	err := h.svc.UpdateCategoryStatus(ctx.Request.Context(), uuid, parseAuditLog(ctx))
 	if err != nil {
 		responseErr(ctx, http.StatusBadRequest, "internal server error")
 		return
