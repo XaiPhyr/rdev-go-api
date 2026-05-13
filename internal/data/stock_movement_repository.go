@@ -84,3 +84,14 @@ func (r *StockMovementRepository) UpdateStockMovementStatus(ctx context.Context,
 
 	return err
 }
+
+func (r *StockMovementRepository) BulkUpload(ctx context.Context) error {
+	// Bulk upload for products using excelize
+	// BATCH INSERT instead of single line
+	// Stage 1: []Product insert on conflict sku update RETURNING id
+	// double check prices using function to avoid panic if typo with string
+	// Stage 2: []Inventory insert on conflict product_id set quantity = inventory.quantity + EXCLUDED.quantity to add new quantity to the current quantity
+	// Stage 3: []StockMovement always insert no update for audit trail and with tag FROM_IMPORTS
+
+	return nil
+}
