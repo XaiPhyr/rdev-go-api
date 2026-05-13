@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"slices"
 	"time"
 
 	"github.com/XaiPhyr/rdev-go-api/internal/config"
@@ -99,27 +100,38 @@ func (s *AuthService) ParseToken(token string) (int64, error) {
 }
 
 func (s *AuthService) CanAccess(ctx context.Context, userID int64, requiredRole string) (bool, error) {
+	// when updating user_roles and user_groups delete cache after
+	cacheKey := fmt.Sprintf("user:perms:%d", userID)
+
+	existCount, err := s.redis.Exists(ctx, cacheKey).Result()
+	if err == nil && existCount > 0 {
+		isSuperAdmin, _ := s.redis.SIsMember(ctx, cacheKey, "super_admin").Result()
+		if isSuperAdmin {
+			return true, nil
+		}
+
+		hasRole, _ := s.redis.SIsMember(ctx, cacheKey, requiredRole).Result()
+		return hasRole, nil
+	}
+
 	allPerms, err := s.r.CheckUserPermission(ctx, userID, requiredRole)
 	if err != nil {
 		log.Println(fmt.Errorf("user permission error: %w", err))
 		return false, err
 	}
 
-	// cacheKey := fmt.Sprintf("user:perms:%d", userID)
+	if len(allPerms) > 0 {
+		pipe := s.redis.Pipeline()
+		pipe.SAdd(ctx, cacheKey, allPerms)
+		pipe.Expire(ctx, cacheKey, 1*time.Hour)
+		_, err := pipe.Exec(ctx)
+		if err != nil {
+			log.Printf("failed to update redis: %v", err)
+		}
+	} else {
+		s.redis.SAdd(ctx, cacheKey, "NONE")
+		s.redis.Expire(ctx, cacheKey, 5*time.Minute)
+	}
 
-	// exists, err := s.redis.SIsMember(ctx, cacheKey, permSlug).Result()
-	// if err == nil {
-	// 	return exists, nil
-	// }
-
-	// if len(allPerms) > 0 {
-	// 	s.redis.SAdd(ctx, cacheKey, allPerms)
-	// 	s.redis.Expire(ctx, cacheKey, 1*time.Hour)
-	// }
-
-	// if slices.Contains(allPerms, requiredRole) {
-	// 	return true, nil
-	// }
-
-	return allPerms, nil
+	return slices.Contains(allPerms, requiredRole) || slices.Contains(allPerms, "super_admin"), nil
 }
