@@ -1,4 +1,5 @@
 /config.docker.yaml
 /config.yaml
+/files*
 .env
 config.docker.host.yaml
