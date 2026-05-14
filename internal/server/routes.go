@@ -123,4 +123,6 @@ func setupStockMovementRoutes(rg *gin.RouterGroup, stockMovementRepo *data.Stock
 	stockMovementRoute.PUT("/:uuid", PermissionRequired(authSvc, "stock_movements:edit"), stockMovementHandler.UpdateStockMovement)
 	stockMovementRoute.DELETE("/:uuid", PermissionRequired(authSvc, "stock_movements:delete"), stockMovementHandler.DeleteStockMovement)
 	stockMovementRoute.POST("/updatestatus/:uuid", PermissionRequired(authSvc, "stock_movements:status"), stockMovementHandler.UpdateStockMovementStatus)
+	stockMovementRoute.POST("/bulkupload", PermissionRequired(authSvc, "stock_movements:upload"), stockMovementHandler.BulkUpload)
+	stockMovementRoute.POST("/processbulkupload", PermissionRequired(authSvc, "stock_movements:process"), stockMovementHandler.ProcessBulkUpload)
 }

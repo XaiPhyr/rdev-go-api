@@ -6,3 +6,7 @@ type StockMovementRequest struct {
 	Reason       *string `json:"reason"`
 	ReferenceID  *string `json:"reference_id"`
 }
+
+type BulkUploadRequest struct {
+	File string `json:"file"`
+}

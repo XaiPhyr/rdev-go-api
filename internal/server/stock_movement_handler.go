@@ -108,3 +108,35 @@ func (h *StockMovementHandler) UpdateStockMovementStatus(ctx *gin.Context) {
 
 	ctx.JSON(http.StatusOK, gin.H{"message": "success"})
 }
+
+func (h *StockMovementHandler) BulkUpload(ctx *gin.Context) {
+	file, err := ctx.FormFile("file")
+	if err != nil {
+		responseErr(ctx, http.StatusBadRequest, "internal server error")
+		return
+	}
+
+	err = h.svc.BulkUpload(ctx, file)
+	if err != nil {
+		responseErr(ctx, http.StatusNotFound, err.Error())
+		return
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{"message": "success"})
+}
+
+func (h *StockMovementHandler) ProcessBulkUpload(ctx *gin.Context) {
+	var req dto.BulkUploadRequest
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		responseErr(ctx, http.StatusBadRequest, "internal server error")
+		return
+	}
+
+	err := h.svc.ProcessBulkUpload(ctx.Request.Context(), req.File)
+	if err != nil {
+		responseErr(ctx, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{"message": "success"})
+}
