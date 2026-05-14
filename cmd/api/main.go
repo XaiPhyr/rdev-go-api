@@ -32,6 +32,7 @@ func main() {
 	router := gin.New()
 	router.Use(gin.Logger())
 	router.Use(gin.Recovery())
+	router.MaxMultipartMemory = 8 << 20
 
 	db := config.ConnectDB(cfg.Database)
 	redis := config.ConnectRedis(cfg.Redis)
