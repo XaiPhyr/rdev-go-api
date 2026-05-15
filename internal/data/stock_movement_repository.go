@@ -125,6 +125,7 @@ func (r *StockMovementRepository) ProcessBulkUpload(ctx context.Context, rows []
 			s = strings.TrimSpace(s)
 			s = strings.ReplaceAll(s, "$", "")
 			s = strings.ReplaceAll(s, ",", "")
+			s = strings.ReplaceAll(s, "-", "")
 
 			price, err := strconv.ParseInt(s, 10, 64)
 			if err != nil {
@@ -173,7 +174,11 @@ func (r *StockMovementRepository) ProcessBulkUpload(ctx context.Context, rows []
 			Model(&products).
 			On("CONFLICT (sku) DO UPDATE").
 			Set("name = EXCLUDED.name").
+			Set("slug = EXCLUDED.slug").
+			Set("description = EXCLUDED.description").
 			Set("price = EXCLUDED.price").
+			Set("barcode = EXCLUDED.barcode").
+			Set("category_id = EXCLUDED.category_id").
 			Returning("id", "sku").
 			Exec(ctx)
 		if err != nil {
