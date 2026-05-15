@@ -149,6 +149,11 @@ func (s *stockMovementService) BulkUpload(ctx context.Context, fileHeader *multi
 	// 	Body:   uploadFile,
 	// })
 
+	ext := filepath.Ext(fileHeader.Filename)
+	if ext != ".xlsx" {
+		return fmt.Errorf("could not proccess file format: %s", ext)
+	}
+
 	if _, err := os.Stat("./files/"); os.IsNotExist(err) {
 		err := os.Mkdir("./files/", 0755)
 		if err != nil {
