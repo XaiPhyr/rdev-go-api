@@ -42,6 +42,12 @@ func (r *ProductRepository) GetProducts(ctx context.Context, q dto.BaseFilters) 
 		Limit(q.PageSize).
 		Offset(q.Page).
 		Order(q.Sort).
+		WhereGroup(" OR ", func(sq *bun.SelectQuery) *bun.SelectQuery {
+			search := "%" + q.Search + "%"
+
+			return sq.WhereOr("p.name ILIKE ?", search).
+				WhereOr("p.slug ILIKE ?", search)
+		}).
 		ScanAndCount(ctx)
 
 	if err != nil {
