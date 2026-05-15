@@ -96,6 +96,11 @@ func (r *StockMovementRepository) ProcessBulkUpload(ctx context.Context, rows []
 	// Stage 2: []Inventory insert on conflict product_id set quantity = inventory.quantity + EXCLUDED.quantity to add new quantity to the current quantity
 	// Stage 3: []StockMovement always insert no update for audit trail and with tag FROM_IMPORTS
 
+	// to consider when Processing Bulk Uploads
+	// Goroutine: Best for "Right Now" background processing.
+	// Cron Job: Best for "Late Night" batch processing.
+	// Worker Pool: The middle ground—processes immediately but limits how many run at once so your server doesn't explode.
+
 	return r.db.RunInTx(ctx, nil, func(ctx context.Context, tx bun.Tx) error {
 		var categories []Category
 		type excelData struct {
