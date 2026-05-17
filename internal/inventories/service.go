@@ -64,7 +64,7 @@ func (s *service) CreateInventory(ctx context.Context, req InventoryRequest, aud
 	}
 
 	err := s.r.CreateInventory(ctx, inventory)
-	s.auditLog.CreateAuditLog(s.auditLog.ParseAuditLog(audit, inventory.UUID, "INVENTORY", nil, *inventory, err))
+	s.auditLog.ParseAndCreateAuditLog(audit, inventory.UUID, "INVENTORY", nil, *inventory, err)
 
 	return err
 }
@@ -88,7 +88,7 @@ func (s *service) UpdateInventory(ctx context.Context, uuid string, req Inventor
 	}
 
 	err = s.r.UpdateInventory(ctx, inventory)
-	s.auditLog.CreateAuditLog(s.auditLog.ParseAuditLog(audit, uuid, "INVENTORY", oldInventory, *inventory, err))
+	s.auditLog.ParseAndCreateAuditLog(audit, uuid, "INVENTORY", oldInventory, *inventory, err)
 
 	return err
 }
@@ -100,7 +100,7 @@ func (s *service) DeleteInventory(ctx context.Context, uuid string, audit models
 	}
 
 	err = s.r.DeleteInventory(ctx, uuid)
-	s.auditLog.CreateAuditLog(s.auditLog.ParseAuditLog(audit, uuid, "INVENTORY", nil, *inventory, err))
+	s.auditLog.ParseAndCreateAuditLog(audit, uuid, "INVENTORY", nil, *inventory, err)
 
 	return err
 }
@@ -112,7 +112,7 @@ func (s *service) UpdateInventoryStatus(ctx context.Context, uuid string, audit 
 	}
 
 	err = s.r.UpdateInventoryStatus(ctx, uuid)
-	s.auditLog.CreateAuditLog(s.auditLog.ParseAuditLog(audit, uuid, "INVENTORY", nil, *inventory, err))
+	s.auditLog.ParseAndCreateAuditLog(audit, uuid, "INVENTORY", nil, *inventory, err)
 
 	return err
 }

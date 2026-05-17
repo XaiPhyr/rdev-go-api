@@ -72,7 +72,7 @@ func (s *service) CreateCategory(ctx context.Context, req CategoryRequest, audit
 	}
 
 	err := s.r.CreateCategory(ctx, category)
-	s.auditLog.CreateAuditLog(s.auditLog.ParseAuditLog(audit, category.UUID, "CATEGORY", nil, *category, err))
+	s.auditLog.ParseAndCreateAuditLog(audit, category.UUID, "CATEGORY", nil, *category, err)
 
 	return err
 }
@@ -96,7 +96,7 @@ func (s *service) UpdateCategory(ctx context.Context, uuid string, req CategoryR
 	}
 
 	err = s.r.UpdateCategory(ctx, category)
-	s.auditLog.CreateAuditLog(s.auditLog.ParseAuditLog(audit, uuid, "CATEGORY", oldCategory, *category, err))
+	s.auditLog.ParseAndCreateAuditLog(audit, uuid, "CATEGORY", oldCategory, *category, err)
 
 	return err
 }
@@ -108,7 +108,7 @@ func (s *service) DeleteCategory(ctx context.Context, uuid string, audit models.
 	}
 
 	err = s.r.DeleteCategory(ctx, uuid)
-	s.auditLog.CreateAuditLog(s.auditLog.ParseAuditLog(audit, uuid, "CATEGORY", nil, *category, err))
+	s.auditLog.ParseAndCreateAuditLog(audit, uuid, "CATEGORY", nil, *category, err)
 
 	return err
 }
@@ -120,7 +120,7 @@ func (s *service) UpdateCategoryStatus(ctx context.Context, uuid string, audit m
 	}
 
 	err = s.r.UpdateCategoryStatus(ctx, uuid)
-	s.auditLog.CreateAuditLog(s.auditLog.ParseAuditLog(audit, uuid, "CATEGORY", nil, *category, err))
+	s.auditLog.ParseAndCreateAuditLog(audit, uuid, "CATEGORY", nil, *category, err)
 
 	return err
 }

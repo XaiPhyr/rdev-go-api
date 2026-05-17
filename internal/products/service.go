@@ -148,7 +148,7 @@ func (s *service) CreateProduct(ctx context.Context, req ProductRequest, audit m
 	}
 
 	err := s.r.CreateProduct(ctx, product, qty)
-	s.auditLog.CreateAuditLog(s.auditLog.ParseAuditLog(audit, product.UUID, "PRODUCT", nil, *product, err))
+	s.auditLog.ParseAndCreateAuditLog(audit, product.UUID, "PRODUCT", nil, *product, err)
 
 	return err
 }
@@ -187,7 +187,7 @@ func (s *service) UpdateProduct(ctx context.Context, uuid string, req ProductReq
 	}
 
 	err = s.r.UpdateProduct(ctx, product)
-	s.auditLog.CreateAuditLog(s.auditLog.ParseAuditLog(audit, uuid, "PRODUCT", oldProduct, *product, err))
+	s.auditLog.ParseAndCreateAuditLog(audit, uuid, "PRODUCT", oldProduct, *product, err)
 
 	return err
 }
@@ -199,7 +199,7 @@ func (s *service) DeleteProduct(ctx context.Context, uuid string, audit models.A
 	}
 
 	err = s.r.DeleteProduct(ctx, uuid)
-	s.auditLog.CreateAuditLog(s.auditLog.ParseAuditLog(audit, uuid, "PRODUCT", nil, *product, err))
+	s.auditLog.ParseAndCreateAuditLog(audit, uuid, "PRODUCT", nil, *product, err)
 
 	return err
 }
@@ -211,7 +211,7 @@ func (s *service) UpdateProductStatus(ctx context.Context, uuid string, audit mo
 	}
 
 	err = s.r.UpdateProductStatus(ctx, uuid)
-	s.auditLog.CreateAuditLog(s.auditLog.ParseAuditLog(audit, uuid, "PRODUCT", nil, *product, err))
+	s.auditLog.ParseAndCreateAuditLog(audit, uuid, "PRODUCT", nil, *product, err)
 
 	return err
 }

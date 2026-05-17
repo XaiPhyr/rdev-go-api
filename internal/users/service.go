@@ -69,7 +69,7 @@ func (s *service) CreateUser(ctx context.Context, req UserRequest, audit models.
 	}
 
 	err := s.r.CreateUser(ctx, user)
-	s.auditLog.CreateAuditLog(s.auditLog.ParseAuditLog(audit, user.UUID, "USER", nil, *user, err))
+	s.auditLog.ParseAndCreateAuditLog(audit, user.UUID, "USER", nil, *user, err)
 
 	return err
 }
@@ -93,7 +93,7 @@ func (s *service) UpdateUser(ctx context.Context, uuid string, req UserRequest, 
 	}
 
 	err = s.r.UpdateUser(ctx, user)
-	s.auditLog.CreateAuditLog(s.auditLog.ParseAuditLog(audit, user.UUID, "USER", oldUser, *user, err))
+	s.auditLog.ParseAndCreateAuditLog(audit, user.UUID, "USER", oldUser, *user, err)
 
 	return err
 }
@@ -105,7 +105,7 @@ func (s *service) DeleteUser(ctx context.Context, uuid string, audit models.Audi
 	}
 
 	err = s.r.DeleteUser(ctx, uuid)
-	s.auditLog.CreateAuditLog(s.auditLog.ParseAuditLog(audit, uuid, "USER", nil, user, err))
+	s.auditLog.ParseAndCreateAuditLog(audit, uuid, "USER", nil, user, err)
 
 	return err
 }
@@ -117,7 +117,7 @@ func (s *service) UpdateUserStatus(ctx context.Context, uuid string, audit model
 	}
 
 	err = s.r.UpdateUserStatus(ctx, uuid)
-	s.auditLog.CreateAuditLog(s.auditLog.ParseAuditLog(audit, uuid, "USER", nil, user, err))
+	s.auditLog.ParseAndCreateAuditLog(audit, uuid, "USER", nil, user, err)
 
 	return err
 }

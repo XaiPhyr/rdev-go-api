@@ -15,7 +15,7 @@ type AuditLogRepository interface {
 type AuditLogService interface {
 	CreateAuditLog(auditLog AuditLog) error
 	QueAuditLog(ctx context.Context)
-	ParseAuditLog(audit models.AuditLogRequest, module_id, module string, beforeChange, afterChang interface{}, err error) AuditLog
+	ParseAndCreateAuditLog(audit models.AuditLogRequest, module_id, module string, beforeChange, afterChang interface{}, err error)
 }
 
 type service struct {
@@ -52,7 +52,7 @@ func (s *service) handleDeadLetter(al AuditLog, err error) {
 	fmt.Printf("⚠️ DEAD LETTER TRIGGERED: %v\n", err)
 }
 
-func (s *service) ParseAuditLog(audit models.AuditLogRequest, module_id, module string, beforeChange, afterChang interface{}, err error) AuditLog {
+func (s *service) ParseAndCreateAuditLog(audit models.AuditLogRequest, module_id, module string, beforeChange, afterChang interface{}, err error) {
 	errMsg := ""
 	status := http.StatusOK
 	if err != nil {
@@ -60,7 +60,7 @@ func (s *service) ParseAuditLog(audit models.AuditLogRequest, module_id, module 
 		errMsg = err.Error()
 	}
 
-	return AuditLog{
+	al := AuditLog{
 		UserID:         audit.UserID,
 		Path:           audit.Path,
 		Action:         audit.Action,
@@ -73,4 +73,6 @@ func (s *service) ParseAuditLog(audit models.AuditLogRequest, module_id, module 
 		UserAgent:      audit.UserAgent,
 		ErrorMessage:   errMsg,
 	}
+
+	s.auditQue <- al
 }

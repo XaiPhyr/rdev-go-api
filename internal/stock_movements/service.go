@@ -77,7 +77,7 @@ func (s *service) CreateStockMovement(ctx context.Context, req StockMovementRequ
 	}
 
 	err := s.r.CreateStockMovement(ctx, sm)
-	s.auditLog.CreateAuditLog(s.auditLog.ParseAuditLog(audit, sm.UUID, "STOCK_MOVEMENT", nil, *sm, err))
+	s.auditLog.ParseAndCreateAuditLog(audit, sm.UUID, "STOCK_MOVEMENT", nil, *sm, err)
 
 	return err
 }
@@ -104,7 +104,7 @@ func (s *service) UpdateStockMovement(ctx context.Context, uuid string, req Stoc
 	}
 
 	err = s.r.UpdateStockMovement(ctx, sm)
-	s.auditLog.CreateAuditLog(s.auditLog.ParseAuditLog(audit, uuid, "STOCK_MOVEMENT", oldStockMovement, *sm, err))
+	s.auditLog.ParseAndCreateAuditLog(audit, uuid, "STOCK_MOVEMENT", oldStockMovement, *sm, err)
 
 	return err
 }
@@ -116,7 +116,7 @@ func (s *service) DeleteStockMovement(ctx context.Context, uuid string, audit mo
 	}
 
 	err = s.r.DeleteStockMovement(ctx, uuid)
-	s.auditLog.CreateAuditLog(s.auditLog.ParseAuditLog(audit, uuid, "STOCK_MOVEMENT", nil, *sm, err))
+	s.auditLog.ParseAndCreateAuditLog(audit, uuid, "STOCK_MOVEMENT", nil, *sm, err)
 
 	return err
 }
@@ -128,7 +128,7 @@ func (s *service) UpdateStockMovementStatus(ctx context.Context, uuid string, au
 	}
 
 	err = s.r.UpdateStockMovementStatus(ctx, uuid)
-	s.auditLog.CreateAuditLog(s.auditLog.ParseAuditLog(audit, uuid, "STOCK_MOVEMENT", nil, *sm, err))
+	s.auditLog.ParseAndCreateAuditLog(audit, uuid, "STOCK_MOVEMENT", nil, *sm, err)
 
 	return err
 }
