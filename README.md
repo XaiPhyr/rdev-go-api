@@ -36,30 +36,47 @@ The environment is configured to bridge the containerized API with your local da
    The API will be accessible at `http://localhost:8200/api/v1`.
 
 ## 📂 Folder structure
-```
+```text
 .
 ├── cmd/
-│   ├── api/                # Main entry point; initializes the server, services, and database
+│   ├── app/                # Main entry point; initializes game loop, services, and db
+│   │   └── main.go         # Calls ebiten.RunGame()
 │   └── migrate/            # CLI tool for managing database schema versions
 ├── internal/
 │   ├── config/             # Configuration management; loads environment variables
-│   ├── data/               # The "Source of Truth"; contains database models and repositories
+│   ├── db/                 # Database connection pools & global migrations
 │   │   └── migrations/     # SQL files defining schema changes over time
-│   ├── dto/                # Data Transfer Objects; handles request/response shapes and query sanitization
-│   ├── server/             # HTTP layer; contains route definitions and controller handlers
-│   ├── service/            # Business logic layer; bridges DTOs and Data models
-│   └── templates/          # HTML templates for email services
-├── go.mod                  # Project dependencies
-└── go.sum                  # Dependency checksums
+│   ├── shared/             # Global utilities shared across multiple domains
+│   │   └── dto/
+│   │       ├── query.go    # Global query params (Pagination, Sorting, Search)
+│   │       └── response.go # Standardized global API response envelopes
+│   ├── users/              # Self-contained User Domain
+│   │   ├── handler.go      # HTTP controllers / Input routers for users
+│   │   ├── repository.go   # Database SQL queries and storage operations
+│   │   ├── service.go      # Business logic and user-specific validation
+│   │   └── types.go        # User-specific request/response shapes (local DTOs)
+│   ├── orders/             # Self-contained Order Domain
+│   │   ├── handler.go
+│   │   ├── repository.go
+│   │   ├── service.go
+│   │   └── types.go
+│   └── templates/          # HTML templates (e.g., for system emails)
+├── go.mod                  # Go module tracking project dependencies
+└── go.sum                  # System dependency checksums
 ```
 
-## Import Flow: _Server_ -> _Service_ -> _Data_
+## Package Dependency & Data Flow
 
-```
-| Layer      | Imports DTO? | Imports Data? | Imports Service? |
-| ---------- | ------------ | ------------- | ---------------- |
-| Handler    | Yes          | No            | Yes              |
-| Service    | Yes          | Yes           | No               |
-| Repository | No*          | Yes           | No               |
-*except for dto.BaseFilters. Service and Repository can see it without causing a cycle error
-```
+In this domain-driven architecture, components within the same folder (e.g., `handler.go`, `service.go`, `repository.go`) belong to the same Go package. They reference each other's types directly without Go `import` statements. 
+
+### Data Flow Matrix
+
+| Component | Can Access Local Types? (`types.go`) | Can Import `shared/dto`? | Can Call Other Domains? |
+| :--- | :--- | :--- | :--- |
+| **Handler** | Yes (Requests/Responses) | Yes (Global Queries) | No (Routes through its own Service) |
+| **Service** | Yes (Core business entities) | Yes (Unpacks Global Queries) | Only via **Interfaces** (to avoid cycles) |
+| **Repository**| Yes (Database models/mappings) | No | No (Strictly handles its own domain DB) |
+
+### Key Rules for Domain Isolation:
+1. **No Direct Cross-Imports:** `internal/orders` must never directly import `internal/users`. If the orders domain needs user data, it must define a local interface that the user service satisfies, or data must be aggregated at the handler/orchestration level.
+2. **Database Purity:** Repositories only talk to the database driver/pool (`internal/db`) and map data to local types. They remain completely blind to HTTP requests, global DTOs, or other feature domains.

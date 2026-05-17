@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	"github.com/XaiPhyr/rdev-go-api/internal/config"
-	"github.com/XaiPhyr/rdev-go-api/internal/data"
+	"github.com/XaiPhyr/rdev-go-api/internal/db"
 
 	"github.com/uptrace/bun/migrate"
 )
@@ -20,8 +20,8 @@ func main() {
 		log.Fatal(err)
 	}
 
-	db := config.ConnectDB(cfg.Database)
-	migrator := migrate.NewMigrator(db, data.Migrations)
+	connDB := config.ConnectDB(cfg.Database)
+	migrator := migrate.NewMigrator(connDB, db.Migrations)
 
 	args := os.Args
 	if len(args) < 2 {

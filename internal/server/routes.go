@@ -3,9 +3,16 @@ package server
 import (
 	"context"
 
+	"github.com/XaiPhyr/rdev-go-api/internal/audit_logs"
+	"github.com/XaiPhyr/rdev-go-api/internal/auth"
+	"github.com/XaiPhyr/rdev-go-api/internal/categories"
 	"github.com/XaiPhyr/rdev-go-api/internal/config"
-	"github.com/XaiPhyr/rdev-go-api/internal/data"
-	"github.com/XaiPhyr/rdev-go-api/internal/service"
+	"github.com/XaiPhyr/rdev-go-api/internal/inventories"
+	"github.com/XaiPhyr/rdev-go-api/internal/middleware"
+	"github.com/XaiPhyr/rdev-go-api/internal/products"
+	"github.com/XaiPhyr/rdev-go-api/internal/shared/email"
+	"github.com/XaiPhyr/rdev-go-api/internal/stock_movements"
+	"github.com/XaiPhyr/rdev-go-api/internal/users"
 
 	"github.com/gin-gonic/gin"
 	"github.com/redis/go-redis/v9"
@@ -17,19 +24,19 @@ import (
 // "service" package imports "data" (for the repository).
 // Never let "data" import "service" or "server".
 func Container(r *gin.Engine, db *bun.DB, redis *redis.Client, cfg *config.Config) {
-	emailSvc := service.NewEmailService(cfg.SMTP.Host, cfg.SMTP.Port, cfg.SMTP.From)
+	emailSvc := email.NewEmailService(cfg.SMTP.Host, cfg.SMTP.Port, cfg.SMTP.From)
 
-	auditLogRepo := data.NewAuditLogRepository(db)
-	auditLogSvc := service.NewAuditLogService(auditLogRepo)
+	auditLogRepo := audit_logs.NewAuditLogRepository(db)
+	auditLogSvc := audit_logs.NewAuditLogService(auditLogRepo)
 	go auditLogSvc.QueAuditLog(context.Background())
 
-	userRepo := data.NewUserRepository(db)
-	authSvc := service.NewAuthService(userRepo, emailSvc, redis, cfg)
+	userRepo := users.NewUserRepository(db)
+	authSvc := auth.NewAuthService(userRepo, emailSvc, redis, cfg)
 
-	categoryRepo := data.NewCategoryRepository(db)
-	productRepo := data.NewProductRepository(db)
-	inventoryRepo := data.NewInventoryRepository(db)
-	stockMovementRepo := data.NewStockMovementRepository(db)
+	categoryRepo := categories.NewCategoryRepository(db)
+	productRepo := products.NewProductRepository(db)
+	inventoryRepo := inventories.NewInventoryRepository(db)
+	stockMovementRepo := stock_movements.NewStockMovementRepository(db)
 
 	apiVersion := r.Group("/api/v1")
 	setupAuthRoutes(apiVersion, authSvc)
@@ -40,89 +47,89 @@ func Container(r *gin.Engine, db *bun.DB, redis *redis.Client, cfg *config.Confi
 	setupStockMovementRoutes(apiVersion, stockMovementRepo, authSvc, emailSvc, redis, auditLogSvc)
 }
 
-func setupAuthRoutes(rg *gin.RouterGroup, authSvc *service.AuthService) {
-	authHandler := NewAuthHandler(authSvc)
+func setupAuthRoutes(rg *gin.RouterGroup, authSvc auth.AuthService) {
+	authHandler := auth.NewAuthHandler(authSvc)
 
 	rg.POST("/login", authHandler.Login)
 	rg.POST("/register", authHandler.Register)
 }
 
-func setupUserRoutes(rg *gin.RouterGroup, userRepo *data.UserRepository, authSvc *service.AuthService, emailSvc *service.EmailService, redis *redis.Client, auditLog service.AuditLogService) {
-	userSvc := service.NewUserService(userRepo, emailSvc, redis, auditLog)
-	userHandler := NewUserHandler(userSvc)
+func setupUserRoutes(rg *gin.RouterGroup, userRepo users.UserRepository, authSvc auth.AuthService, emailSvc *email.EmailService, redis *redis.Client, auditLog audit_logs.AuditLogService) {
+	userSvc := users.NewUserService(userRepo, emailSvc, redis, auditLog)
+	userHandler := users.NewUserHandler(userSvc)
 
 	userRoute := rg.Group("/users")
-	userRoute.Use(AuthRequired(authSvc))
+	userRoute.Use(middleware.AuthRequired(authSvc))
 
-	userRoute.GET("", PermissionRequired(authSvc, "users:view"), userHandler.GetUsers)
-	userRoute.GET("/:uuid", PermissionRequired(authSvc, "users:view"), userHandler.GetUserByUUID)
-	userRoute.POST("", PermissionRequired(authSvc, "users:create"), userHandler.CreateUser)
-	userRoute.PUT("/:uuid", PermissionRequired(authSvc, "users:edit"), userHandler.UpdateUser)
-	userRoute.DELETE("/:uuid", PermissionRequired(authSvc, "users:delete"), userHandler.DeleteUser)
-	userRoute.POST("/updatestatus/:uuid", PermissionRequired(authSvc, "users:status"), userHandler.UpdateUserStatus)
+	userRoute.GET("", middleware.PermissionRequired(authSvc, "users:view"), userHandler.GetUsers)
+	userRoute.GET("/:uuid", middleware.PermissionRequired(authSvc, "users:view"), userHandler.GetUserByUUID)
+	userRoute.POST("", middleware.PermissionRequired(authSvc, "users:create"), userHandler.CreateUser)
+	userRoute.PUT("/:uuid", middleware.PermissionRequired(authSvc, "users:edit"), userHandler.UpdateUser)
+	userRoute.DELETE("/:uuid", middleware.PermissionRequired(authSvc, "users:delete"), userHandler.DeleteUser)
+	userRoute.POST("/updatestatus/:uuid", middleware.PermissionRequired(authSvc, "users:status"), userHandler.UpdateUserStatus)
 }
 
-func setupCategoryRoutes(rg *gin.RouterGroup, categoryRepo *data.CategoryRepository, authSvc *service.AuthService, emailSvc *service.EmailService, redis *redis.Client, auditLog service.AuditLogService) {
-	categorySvc := service.NewCategoryService(categoryRepo, emailSvc, redis, auditLog)
-	categoryHandler := NewCategoryHandler(categorySvc)
+func setupCategoryRoutes(rg *gin.RouterGroup, categoryRepo categories.CategoryRepository, authSvc auth.AuthService, emailSvc *email.EmailService, redis *redis.Client, auditLog audit_logs.AuditLogService) {
+	categorySvc := categories.NewCategoryService(categoryRepo, emailSvc, redis, auditLog)
+	categoryHandler := categories.NewCategoryHandler(categorySvc)
 
 	categoryRoute := rg.Group("/categories")
-	categoryRoute.Use(AuthRequired(authSvc))
+	categoryRoute.Use(middleware.AuthRequired(authSvc))
 
-	categoryRoute.GET("", PermissionRequired(authSvc, "categories:view"), categoryHandler.GetCategories)
-	categoryRoute.GET("/:uuid", PermissionRequired(authSvc, "categories:view"), categoryHandler.GetCategoryByUUID)
-	categoryRoute.POST("", PermissionRequired(authSvc, "categories:create"), categoryHandler.CreateCategory)
-	categoryRoute.PUT("/:uuid", PermissionRequired(authSvc, "categories:edit"), categoryHandler.UpdateCategory)
-	categoryRoute.DELETE("/:uuid", PermissionRequired(authSvc, "categories:delete"), categoryHandler.DeleteCategory)
-	categoryRoute.POST("/updatestatus/:uuid", PermissionRequired(authSvc, "categories:status"), categoryHandler.UpdateCategoryStatus)
-	categoryRoute.GET("/tree", PermissionRequired(authSvc, "categories:view"), categoryHandler.GetCategoryTree)
+	categoryRoute.GET("", middleware.PermissionRequired(authSvc, "categories:view"), categoryHandler.GetCategories)
+	categoryRoute.GET("/:uuid", middleware.PermissionRequired(authSvc, "categories:view"), categoryHandler.GetCategoryByUUID)
+	categoryRoute.POST("", middleware.PermissionRequired(authSvc, "categories:create"), categoryHandler.CreateCategory)
+	categoryRoute.PUT("/:uuid", middleware.PermissionRequired(authSvc, "categories:edit"), categoryHandler.UpdateCategory)
+	categoryRoute.DELETE("/:uuid", middleware.PermissionRequired(authSvc, "categories:delete"), categoryHandler.DeleteCategory)
+	categoryRoute.POST("/updatestatus/:uuid", middleware.PermissionRequired(authSvc, "categories:status"), categoryHandler.UpdateCategoryStatus)
+	categoryRoute.GET("/tree", middleware.PermissionRequired(authSvc, "categories:view"), categoryHandler.GetCategoryTree)
 }
 
-func setupProductRoutes(rg *gin.RouterGroup, productRepo *data.ProductRepository, authSvc *service.AuthService, emailSvc *service.EmailService, redis *redis.Client, auditLog service.AuditLogService) {
-	productSvc := service.NewProductService(productRepo, emailSvc, redis, auditLog)
-	productHandler := NewProductHandler(productSvc)
+func setupProductRoutes(rg *gin.RouterGroup, productRepo products.ProductRepository, authSvc auth.AuthService, emailSvc *email.EmailService, redis *redis.Client, auditLog audit_logs.AuditLogService) {
+	productSvc := products.NewProductService(productRepo, emailSvc, redis, auditLog)
+	productHandler := products.NewProductHandler(productSvc)
 
 	productRoute := rg.Group("/products")
-	productRoute.Use(AuthRequired(authSvc))
+	productRoute.Use(middleware.AuthRequired(authSvc))
 
 	productRoute.GET("/public", productHandler.GetProductsPublic)
-	productRoute.GET("", PermissionRequired(authSvc, "products:view"), productHandler.GetProducts)
-	productRoute.GET("/:uuid", PermissionRequired(authSvc, "products:view"), productHandler.GetProductByUUID)
-	productRoute.POST("", PermissionRequired(authSvc, "products:create"), productHandler.CreateProduct)
-	productRoute.PUT("/:uuid", PermissionRequired(authSvc, "products:edit"), productHandler.UpdateProduct)
-	productRoute.DELETE("/:uuid", PermissionRequired(authSvc, "products:delete"), productHandler.DeleteProduct)
-	productRoute.POST("/updatestatus/:uuid", PermissionRequired(authSvc, "products:status"), productHandler.UpdateProductStatus)
-	productRoute.GET("/backoffice", PermissionRequired(authSvc, "products:view"), productHandler.GetProductsBackoffice)
+	productRoute.GET("", middleware.PermissionRequired(authSvc, "products:view"), productHandler.GetProducts)
+	productRoute.GET("/:uuid", middleware.PermissionRequired(authSvc, "products:view"), productHandler.GetProductByUUID)
+	productRoute.POST("", middleware.PermissionRequired(authSvc, "products:create"), productHandler.CreateProduct)
+	productRoute.PUT("/:uuid", middleware.PermissionRequired(authSvc, "products:edit"), productHandler.UpdateProduct)
+	productRoute.DELETE("/:uuid", middleware.PermissionRequired(authSvc, "products:delete"), productHandler.DeleteProduct)
+	productRoute.POST("/updatestatus/:uuid", middleware.PermissionRequired(authSvc, "products:status"), productHandler.UpdateProductStatus)
+	productRoute.GET("/backoffice", middleware.PermissionRequired(authSvc, "products:view"), productHandler.GetProductsBackoffice)
 }
 
-func setupInventoryRoutes(rg *gin.RouterGroup, inventoryRepo *data.InventoryRepository, authSvc *service.AuthService, emailSvc *service.EmailService, redis *redis.Client, auditLog service.AuditLogService) {
-	inventorySvc := service.NewInventoryService(inventoryRepo, emailSvc, redis, auditLog)
-	inventoryHandler := NewInventoryHandler(inventorySvc)
+func setupInventoryRoutes(rg *gin.RouterGroup, inventoryRepo inventories.InventoryRepository, authSvc auth.AuthService, emailSvc *email.EmailService, redis *redis.Client, auditLog audit_logs.AuditLogService) {
+	inventorySvc := inventories.NewInventoryService(inventoryRepo, emailSvc, redis, auditLog)
+	inventoryHandler := inventories.NewInventoryHandler(inventorySvc)
 
 	inventoryRoute := rg.Group("/inventories")
-	inventoryRoute.Use(AuthRequired(authSvc))
+	inventoryRoute.Use(middleware.AuthRequired(authSvc))
 
-	inventoryRoute.GET("", PermissionRequired(authSvc, "inventories:view"), inventoryHandler.GetInventories)
-	inventoryRoute.GET("/:uuid", PermissionRequired(authSvc, "inventories:view"), inventoryHandler.GetInventoryByUUID)
-	inventoryRoute.POST("", PermissionRequired(authSvc, "inventories:create"), inventoryHandler.CreateInventory)
-	inventoryRoute.PUT("/:uuid", PermissionRequired(authSvc, "inventories:edit"), inventoryHandler.UpdateInventory)
-	inventoryRoute.DELETE("/:uuid", PermissionRequired(authSvc, "inventories:delete"), inventoryHandler.DeleteInventory)
-	inventoryRoute.POST("/updatestatus/:uuid", PermissionRequired(authSvc, "inventories:status"), inventoryHandler.UpdateInventoryStatus)
+	inventoryRoute.GET("", middleware.PermissionRequired(authSvc, "inventories:view"), inventoryHandler.GetInventories)
+	inventoryRoute.GET("/:uuid", middleware.PermissionRequired(authSvc, "inventories:view"), inventoryHandler.GetInventoryByUUID)
+	inventoryRoute.POST("", middleware.PermissionRequired(authSvc, "inventories:create"), inventoryHandler.CreateInventory)
+	inventoryRoute.PUT("/:uuid", middleware.PermissionRequired(authSvc, "inventories:edit"), inventoryHandler.UpdateInventory)
+	inventoryRoute.DELETE("/:uuid", middleware.PermissionRequired(authSvc, "inventories:delete"), inventoryHandler.DeleteInventory)
+	inventoryRoute.POST("/updatestatus/:uuid", middleware.PermissionRequired(authSvc, "inventories:status"), inventoryHandler.UpdateInventoryStatus)
 }
 
-func setupStockMovementRoutes(rg *gin.RouterGroup, stockMovementRepo *data.StockMovementRepository, authSvc *service.AuthService, emailSvc *service.EmailService, redis *redis.Client, auditLog service.AuditLogService) {
-	stockMovementSvc := service.NewStockMovementService(stockMovementRepo, emailSvc, redis, auditLog)
-	stockMovementHandler := NewStockMovementHandler(stockMovementSvc)
+func setupStockMovementRoutes(rg *gin.RouterGroup, stockMovementRepo stock_movements.StockMovementRepository, authSvc auth.AuthService, emailSvc *email.EmailService, redis *redis.Client, auditLog audit_logs.AuditLogService) {
+	stockMovementSvc := stock_movements.NewStockMovementService(stockMovementRepo, emailSvc, redis, auditLog)
+	stockMovementHandler := stock_movements.NewStockMovementHandler(stockMovementSvc)
 
 	stockMovementRoute := rg.Group("/stock_movements")
-	stockMovementRoute.Use(AuthRequired(authSvc))
+	stockMovementRoute.Use(middleware.AuthRequired(authSvc))
 
-	stockMovementRoute.GET("", PermissionRequired(authSvc, "stock_movements:view"), stockMovementHandler.GetStockMovements)
-	stockMovementRoute.GET("/:uuid", PermissionRequired(authSvc, "stock_movements:view"), stockMovementHandler.GetStockMovementByUUID)
-	stockMovementRoute.POST("", PermissionRequired(authSvc, "stock_movements:create"), stockMovementHandler.CreateStockMovement)
-	stockMovementRoute.PUT("/:uuid", PermissionRequired(authSvc, "stock_movements:edit"), stockMovementHandler.UpdateStockMovement)
-	stockMovementRoute.DELETE("/:uuid", PermissionRequired(authSvc, "stock_movements:delete"), stockMovementHandler.DeleteStockMovement)
-	stockMovementRoute.POST("/updatestatus/:uuid", PermissionRequired(authSvc, "stock_movements:status"), stockMovementHandler.UpdateStockMovementStatus)
-	stockMovementRoute.POST("/bulkupload", PermissionRequired(authSvc, "stock_movements:upload"), stockMovementHandler.BulkUpload)
-	stockMovementRoute.POST("/processbulkupload", PermissionRequired(authSvc, "stock_movements:process"), stockMovementHandler.ProcessBulkUpload)
+	stockMovementRoute.GET("", middleware.PermissionRequired(authSvc, "stock_movements:view"), stockMovementHandler.GetStockMovements)
+	stockMovementRoute.GET("/:uuid", middleware.PermissionRequired(authSvc, "stock_movements:view"), stockMovementHandler.GetStockMovementByUUID)
+	stockMovementRoute.POST("", middleware.PermissionRequired(authSvc, "stock_movements:create"), stockMovementHandler.CreateStockMovement)
+	stockMovementRoute.PUT("/:uuid", middleware.PermissionRequired(authSvc, "stock_movements:edit"), stockMovementHandler.UpdateStockMovement)
+	stockMovementRoute.DELETE("/:uuid", middleware.PermissionRequired(authSvc, "stock_movements:delete"), stockMovementHandler.DeleteStockMovement)
+	stockMovementRoute.POST("/updatestatus/:uuid", middleware.PermissionRequired(authSvc, "stock_movements:status"), stockMovementHandler.UpdateStockMovementStatus)
+	stockMovementRoute.POST("/bulkupload", middleware.PermissionRequired(authSvc, "stock_movements:upload"), stockMovementHandler.BulkUpload)
+	stockMovementRoute.POST("/processbulkupload", middleware.PermissionRequired(authSvc, "stock_movements:process"), stockMovementHandler.ProcessBulkUpload)
 }
