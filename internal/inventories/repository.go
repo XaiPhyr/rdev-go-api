@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/XaiPhyr/rdev-go-api/internal/shared/dto"
+	"github.com/XaiPhyr/rdev-go-api/internal/shared/models"
 	"github.com/uptrace/bun"
 )
 
@@ -16,8 +17,8 @@ func NewInventoryRepository(db *bun.DB) *Repository {
 	return &Repository{db: db}
 }
 
-func (r *Repository) GetInventoryByUUID(ctx context.Context, uuid string) (*Inventory, error) {
-	inventory := new(Inventory)
+func (r *Repository) GetInventoryByUUID(ctx context.Context, uuid string) (*models.Inventory, error) {
+	inventory := new(models.Inventory)
 
 	err := r.db.NewSelect().
 		Model(inventory).
@@ -31,8 +32,8 @@ func (r *Repository) GetInventoryByUUID(ctx context.Context, uuid string) (*Inve
 	return inventory, nil
 }
 
-func (r *Repository) GetInventories(ctx context.Context, q dto.BaseFilters) ([]Inventory, int, error) {
-	var inventories []Inventory
+func (r *Repository) GetInventories(ctx context.Context, q dto.BaseFilters) ([]models.Inventory, int, error) {
+	var inventories []models.Inventory
 
 	count, err := r.db.NewSelect().
 		Model(&inventories).
@@ -48,13 +49,13 @@ func (r *Repository) GetInventories(ctx context.Context, q dto.BaseFilters) ([]I
 	return inventories, count, nil
 }
 
-func (r *Repository) CreateInventory(ctx context.Context, inventory *Inventory) error {
+func (r *Repository) CreateInventory(ctx context.Context, inventory *models.Inventory) error {
 	_, err := r.db.NewInsert().Model(inventory).Exec(ctx)
 
 	return err
 }
 
-func (r *Repository) UpdateInventory(ctx context.Context, inventory *Inventory) error {
+func (r *Repository) UpdateInventory(ctx context.Context, inventory *models.Inventory) error {
 	_, err := r.db.NewUpdate().
 		Model(inventory).
 		Column("product_id", "quantity", "low_stock_threshold").
@@ -67,7 +68,7 @@ func (r *Repository) UpdateInventory(ctx context.Context, inventory *Inventory) 
 
 func (r *Repository) DeleteInventory(ctx context.Context, uuid string) error {
 	_, err := r.db.NewDelete().
-		Model((*Inventory)(nil)).
+		Model((*models.Inventory)(nil)).
 		Where("uuid = ?", uuid).
 		Exec(ctx)
 
@@ -76,7 +77,7 @@ func (r *Repository) DeleteInventory(ctx context.Context, uuid string) error {
 
 func (r *Repository) UpdateInventoryStatus(ctx context.Context, uuid string) error {
 	_, err := r.db.NewUpdate().
-		Model((*Inventory)(nil)).
+		Model((*models.Inventory)(nil)).
 		Set("status = CASE WHEN status = 'A' THEN 'I' ELSE 'A' END").
 		Set("updated_at = ?", time.Now()).
 		Where("uuid = ?", uuid).

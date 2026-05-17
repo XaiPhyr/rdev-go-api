@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/XaiPhyr/rdev-go-api/internal/audit_logs"
-	"github.com/XaiPhyr/rdev-go-api/internal/categories"
 	"github.com/XaiPhyr/rdev-go-api/internal/shared/dto"
 	"github.com/XaiPhyr/rdev-go-api/internal/shared/email"
 	"github.com/XaiPhyr/rdev-go-api/internal/shared/models"
@@ -13,19 +12,19 @@ import (
 )
 
 type ProductRepository interface {
-	GetProductByUUID(ctx context.Context, uuid string) (*Product, error)
-	GetProducts(ctx context.Context, filters dto.BaseFilters) ([]Product, int, error)
-	GetProductsPublic(ctx context.Context, q dto.BaseFilters) ([]Product, int, error)
-	GetProductsBackoffice(ctx context.Context, q dto.BaseFilters) ([]Product, int, error)
-	CreateProduct(ctx context.Context, category *Product, initQty int64) error
-	UpdateProduct(ctx context.Context, category *Product) error
+	GetProductByUUID(ctx context.Context, uuid string) (*models.Product, error)
+	GetProducts(ctx context.Context, filters dto.BaseFilters) ([]models.Product, int, error)
+	GetProductsPublic(ctx context.Context, q dto.BaseFilters) ([]models.Product, int, error)
+	GetProductsBackoffice(ctx context.Context, q dto.BaseFilters) ([]models.Product, int, error)
+	CreateProduct(ctx context.Context, category *models.Product, initQty int64) error
+	UpdateProduct(ctx context.Context, category *models.Product) error
 	DeleteProduct(ctx context.Context, uuid string) error
 	UpdateProductStatus(ctx context.Context, uuid string) error
 }
 
 type ProductService interface {
-	GetProductByUUID(ctx context.Context, uuid string) (*Product, error)
-	GetProducts(ctx context.Context, q dto.Query) ([]Product, int, error)
+	GetProductByUUID(ctx context.Context, uuid string) (*models.Product, error)
+	GetProducts(ctx context.Context, q dto.Query) ([]models.Product, int, error)
 	GetProductsPublic(ctx context.Context, q dto.Query) ([]ProductPublicResponse, int, error)
 	GetProductsBackoffice(ctx context.Context, q dto.Query) ([]ProductBackofficeResponse, int, error)
 	CreateProduct(ctx context.Context, req ProductRequest, audit models.AuditLogRequest) error
@@ -45,11 +44,11 @@ func NewProductService(r ProductRepository, es *email.EmailService, redis *redis
 	return &service{r: r, es: es, redis: redis, auditLog: auditLog}
 }
 
-func (s *service) GetProductByUUID(ctx context.Context, uuid string) (*Product, error) {
+func (s *service) GetProductByUUID(ctx context.Context, uuid string) (*models.Product, error) {
 	return s.r.GetProductByUUID(ctx, uuid)
 }
 
-func (s *service) GetProducts(ctx context.Context, q dto.Query) ([]Product, int, error) {
+func (s *service) GetProducts(ctx context.Context, q dto.Query) ([]models.Product, int, error) {
 	filters := q.SanitizeQuery([]string{"name", "barcode"})
 
 	return s.r.GetProducts(ctx, filters)
@@ -67,15 +66,10 @@ func (s *service) GetProductsPublic(ctx context.Context, q dto.Query) ([]Product
 			Description:  p.Description,
 			Barcode:      p.Barcode,
 			DisplayPrice: float64(p.Price) / 100.00,
-			Category:     &categories.CategoryResponse{},
 		}
 
 		if p.Category != nil {
-			items[i].Category = &categories.CategoryResponse{
-				Name: p.Category.Name,
-				Slug: p.Category.Slug,
-				UUID: p.Category.UUID,
-			}
+			items[i].Category = p.Category.Name
 		}
 	}
 
@@ -96,15 +90,10 @@ func (s *service) GetProductsBackoffice(ctx context.Context, q dto.Query) ([]Pro
 			SKU:          p.SKU,
 			Barcode:      p.Barcode,
 			DisplayPrice: float64(p.Price) / 100.00,
-			Category:     &categories.CategoryResponse{},
 		}
 
 		if p.Category != nil {
-			items[i].Category = &categories.CategoryResponse{
-				Name: p.Category.Name,
-				Slug: p.Category.Slug,
-				UUID: p.Category.UUID,
-			}
+			items[i].Category = p.Category.Name
 		}
 
 		if p.Inventory != nil {
@@ -116,7 +105,7 @@ func (s *service) GetProductsBackoffice(ctx context.Context, q dto.Query) ([]Pro
 }
 
 func (s *service) CreateProduct(ctx context.Context, req ProductRequest, audit models.AuditLogRequest) error {
-	product := &Product{}
+	product := &models.Product{}
 	var qty int64 = 0
 
 	if req.CategoryID != nil {

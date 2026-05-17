@@ -19,18 +19,18 @@ import (
 )
 
 type StockMovementRepository interface {
-	GetStockMovementByUUID(ctx context.Context, uuid string) (*StockMovement, error)
-	GetStockMovements(ctx context.Context, filters dto.BaseFilters) ([]StockMovement, int, error)
-	CreateStockMovement(ctx context.Context, sm *StockMovement) error
-	UpdateStockMovement(ctx context.Context, sm *StockMovement) error
+	GetStockMovementByUUID(ctx context.Context, uuid string) (*models.StockMovement, error)
+	GetStockMovements(ctx context.Context, filters dto.BaseFilters) ([]models.StockMovement, int, error)
+	CreateStockMovement(ctx context.Context, sm *models.StockMovement) error
+	UpdateStockMovement(ctx context.Context, sm *models.StockMovement) error
 	DeleteStockMovement(ctx context.Context, uuid string) error
 	UpdateStockMovementStatus(ctx context.Context, uuid string) error
 	ProcessBulkUpload(ctx context.Context, row [][]string) error
 }
 
 type StockMovementService interface {
-	GetStockMovementByUUID(ctx context.Context, uuid string) (*StockMovement, error)
-	GetStockMovements(ctx context.Context, q dto.Query) ([]StockMovement, int, error)
+	GetStockMovementByUUID(ctx context.Context, uuid string) (*models.StockMovement, error)
+	GetStockMovements(ctx context.Context, q dto.Query) ([]models.StockMovement, int, error)
 	CreateStockMovement(ctx context.Context, req StockMovementRequest, audit models.AuditLogRequest) error
 	UpdateStockMovement(ctx context.Context, uuid string, req StockMovementRequest, audit models.AuditLogRequest) error
 	DeleteStockMovement(ctx context.Context, uuid string, audit models.AuditLogRequest) error
@@ -50,18 +50,18 @@ func NewStockMovementService(r StockMovementRepository, es *email.EmailService, 
 	return &service{r: r, es: es, redis: redis, auditLog: auditLog}
 }
 
-func (s *service) GetStockMovementByUUID(ctx context.Context, uuid string) (*StockMovement, error) {
+func (s *service) GetStockMovementByUUID(ctx context.Context, uuid string) (*models.StockMovement, error) {
 	return s.r.GetStockMovementByUUID(ctx, uuid)
 }
 
-func (s *service) GetStockMovements(ctx context.Context, q dto.Query) ([]StockMovement, int, error) {
+func (s *service) GetStockMovements(ctx context.Context, q dto.Query) ([]models.StockMovement, int, error) {
 	filters := q.SanitizeQuery([]string{"change_amount", "reason", "reference_id"})
 
 	return s.r.GetStockMovements(ctx, filters)
 }
 
 func (s *service) CreateStockMovement(ctx context.Context, req StockMovementRequest, audit models.AuditLogRequest) error {
-	sm := &StockMovement{}
+	sm := &models.StockMovement{}
 
 	if req.ProductID != nil {
 		sm.ProductID = *req.ProductID

@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/XaiPhyr/rdev-go-api/internal/shared/dto"
+	"github.com/XaiPhyr/rdev-go-api/internal/shared/models"
 	"github.com/uptrace/bun"
 )
 
@@ -16,8 +17,8 @@ func NewCategoryRepository(db *bun.DB) *Repository {
 	return &Repository{db: db}
 }
 
-func (r *Repository) GetCategoryByUUID(ctx context.Context, uuid string) (*Category, error) {
-	category := new(Category)
+func (r *Repository) GetCategoryByUUID(ctx context.Context, uuid string) (*models.Category, error) {
+	category := new(models.Category)
 
 	err := r.db.NewSelect().
 		Model(category).
@@ -31,8 +32,8 @@ func (r *Repository) GetCategoryByUUID(ctx context.Context, uuid string) (*Categ
 	return category, nil
 }
 
-func (r *Repository) GetCategories(ctx context.Context, q dto.BaseFilters) ([]Category, int, error) {
-	var categories []Category
+func (r *Repository) GetCategories(ctx context.Context, q dto.BaseFilters) ([]models.Category, int, error) {
+	var categories []models.Category
 
 	count, err := r.db.NewSelect().
 		Model(&categories).
@@ -69,13 +70,13 @@ func (r *Repository) GetCategoryTree(ctx context.Context, q dto.BaseFilters) ([]
 	return categories, nil
 }
 
-func (r *Repository) CreateCategory(ctx context.Context, category *Category) error {
+func (r *Repository) CreateCategory(ctx context.Context, category *models.Category) error {
 	_, err := r.db.NewInsert().Model(category).Exec(ctx)
 
 	return err
 }
 
-func (r *Repository) UpdateCategory(ctx context.Context, category *Category) error {
+func (r *Repository) UpdateCategory(ctx context.Context, category *models.Category) error {
 	_, err := r.db.NewUpdate().
 		Model(category).
 		Column("parent_id", "name", "slug").
@@ -88,7 +89,7 @@ func (r *Repository) UpdateCategory(ctx context.Context, category *Category) err
 
 func (r *Repository) DeleteCategory(ctx context.Context, uuid string) error {
 	_, err := r.db.NewDelete().
-		Model((*Category)(nil)).
+		Model((*models.Category)(nil)).
 		Where("uuid = ?", uuid).
 		Exec(ctx)
 
@@ -97,7 +98,7 @@ func (r *Repository) DeleteCategory(ctx context.Context, uuid string) error {
 
 func (r *Repository) UpdateCategoryStatus(ctx context.Context, uuid string) error {
 	_, err := r.db.NewUpdate().
-		Model((*Category)(nil)).
+		Model((*models.Category)(nil)).
 		Set("status = CASE WHEN status = 'A' THEN 'I' ELSE 'A' END").
 		Set("updated_at = ?", time.Now()).
 		Where("uuid = ?", uuid).

@@ -12,18 +12,18 @@ import (
 )
 
 type CategoryRepository interface {
-	GetCategoryByUUID(ctx context.Context, uuid string) (*Category, error)
-	GetCategories(ctx context.Context, filters dto.BaseFilters) ([]Category, int, error)
+	GetCategoryByUUID(ctx context.Context, uuid string) (*models.Category, error)
+	GetCategories(ctx context.Context, filters dto.BaseFilters) ([]models.Category, int, error)
 	GetCategoryTree(ctx context.Context, filters dto.BaseFilters) ([]CategoryTree, error)
-	CreateCategory(ctx context.Context, category *Category) error
-	UpdateCategory(ctx context.Context, category *Category) error
+	CreateCategory(ctx context.Context, category *models.Category) error
+	UpdateCategory(ctx context.Context, category *models.Category) error
 	DeleteCategory(ctx context.Context, uuid string) error
 	UpdateCategoryStatus(ctx context.Context, uuid string) error
 }
 
 type CategoryService interface {
-	GetCategoryByUUID(ctx context.Context, uuid string) (*Category, error)
-	GetCategories(ctx context.Context, q dto.Query) ([]Category, int, error)
+	GetCategoryByUUID(ctx context.Context, uuid string) (*models.Category, error)
+	GetCategories(ctx context.Context, q dto.Query) ([]models.Category, int, error)
 	GetCategoryTree(ctx context.Context, q dto.Query) ([]CategoryTree, error)
 	CreateCategory(ctx context.Context, req CategoryRequest, auditLog models.AuditLogRequest) error
 	UpdateCategory(ctx context.Context, uuid string, req CategoryRequest, auditLog models.AuditLogRequest) error
@@ -42,11 +42,11 @@ func NewCategoryService(r CategoryRepository, es *email.EmailService, redis *red
 	return &service{r: r, es: es, redis: redis, auditLog: auditLog}
 }
 
-func (s *service) GetCategoryByUUID(ctx context.Context, uuid string) (*Category, error) {
+func (s *service) GetCategoryByUUID(ctx context.Context, uuid string) (*models.Category, error) {
 	return s.r.GetCategoryByUUID(ctx, uuid)
 }
 
-func (s *service) GetCategories(ctx context.Context, q dto.Query) ([]Category, int, error) {
+func (s *service) GetCategories(ctx context.Context, q dto.Query) ([]models.Category, int, error) {
 	filters := q.SanitizeQuery([]string{"name"})
 
 	return s.r.GetCategories(ctx, filters)
@@ -59,7 +59,7 @@ func (s *service) GetCategoryTree(ctx context.Context, q dto.Query) ([]CategoryT
 }
 
 func (s *service) CreateCategory(ctx context.Context, req CategoryRequest, audit models.AuditLogRequest) error {
-	category := &Category{}
+	category := &models.Category{}
 
 	if req.ParentID != nil {
 		category.ParentID = req.ParentID

@@ -12,17 +12,17 @@ import (
 )
 
 type InventoryRepository interface {
-	GetInventoryByUUID(ctx context.Context, uuid string) (*Inventory, error)
-	GetInventories(ctx context.Context, filters dto.BaseFilters) ([]Inventory, int, error)
-	CreateInventory(ctx context.Context, category *Inventory) error
-	UpdateInventory(ctx context.Context, category *Inventory) error
+	GetInventoryByUUID(ctx context.Context, uuid string) (*models.Inventory, error)
+	GetInventories(ctx context.Context, filters dto.BaseFilters) ([]models.Inventory, int, error)
+	CreateInventory(ctx context.Context, category *models.Inventory) error
+	UpdateInventory(ctx context.Context, category *models.Inventory) error
 	DeleteInventory(ctx context.Context, uuid string) error
 	UpdateInventoryStatus(ctx context.Context, uuid string) error
 }
 
 type InventoryService interface {
-	GetInventoryByUUID(ctx context.Context, uuid string) (*Inventory, error)
-	GetInventories(ctx context.Context, q dto.Query) ([]Inventory, int, error)
+	GetInventoryByUUID(ctx context.Context, uuid string) (*models.Inventory, error)
+	GetInventories(ctx context.Context, q dto.Query) ([]models.Inventory, int, error)
 	CreateInventory(ctx context.Context, req InventoryRequest, audit models.AuditLogRequest) error
 	UpdateInventory(ctx context.Context, uuid string, req InventoryRequest, audit models.AuditLogRequest) error
 	DeleteInventory(ctx context.Context, uuid string, audit models.AuditLogRequest) error
@@ -40,18 +40,18 @@ func NewInventoryService(r InventoryRepository, es *email.EmailService, redis *r
 	return &service{r: r, es: es, redis: redis, auditLog: auditLog}
 }
 
-func (s *service) GetInventoryByUUID(ctx context.Context, uuid string) (*Inventory, error) {
+func (s *service) GetInventoryByUUID(ctx context.Context, uuid string) (*models.Inventory, error) {
 	return s.r.GetInventoryByUUID(ctx, uuid)
 }
 
-func (s *service) GetInventories(ctx context.Context, q dto.Query) ([]Inventory, int, error) {
+func (s *service) GetInventories(ctx context.Context, q dto.Query) ([]models.Inventory, int, error) {
 	filters := q.SanitizeQuery([]string{"quantity", "low_stock_threshold"})
 
 	return s.r.GetInventories(ctx, filters)
 }
 
 func (s *service) CreateInventory(ctx context.Context, req InventoryRequest, audit models.AuditLogRequest) error {
-	inventory := &Inventory{}
+	inventory := &models.Inventory{}
 
 	if req.ProductID != nil {
 		inventory.ProductID = *req.ProductID

@@ -1,4 +1,4 @@
-package audit_logs
+package models
 
 import (
 	"github.com/XaiPhyr/rdev-go-api/internal/shared/fields"

@@ -8,8 +8,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/XaiPhyr/rdev-go-api/internal/categories"
-	"github.com/XaiPhyr/rdev-go-api/internal/inventories"
 	"github.com/XaiPhyr/rdev-go-api/internal/shared/dto"
 	"github.com/XaiPhyr/rdev-go-api/internal/shared/models"
 	"github.com/uptrace/bun"
@@ -23,8 +21,8 @@ func NewStockMovementRepository(db *bun.DB) *Repository {
 	return &Repository{db: db}
 }
 
-func (r *Repository) GetStockMovementByUUID(ctx context.Context, uuid string) (*StockMovement, error) {
-	sm := new(StockMovement)
+func (r *Repository) GetStockMovementByUUID(ctx context.Context, uuid string) (*models.StockMovement, error) {
+	sm := new(models.StockMovement)
 
 	err := r.db.NewSelect().
 		Model(sm).
@@ -38,8 +36,8 @@ func (r *Repository) GetStockMovementByUUID(ctx context.Context, uuid string) (*
 	return sm, nil
 }
 
-func (r *Repository) GetStockMovements(ctx context.Context, q dto.BaseFilters) ([]StockMovement, int, error) {
-	var sm []StockMovement
+func (r *Repository) GetStockMovements(ctx context.Context, q dto.BaseFilters) ([]models.StockMovement, int, error) {
+	var sm []models.StockMovement
 
 	count, err := r.db.NewSelect().
 		Model(&sm).
@@ -55,13 +53,13 @@ func (r *Repository) GetStockMovements(ctx context.Context, q dto.BaseFilters) (
 	return sm, count, nil
 }
 
-func (r *Repository) CreateStockMovement(ctx context.Context, sm *StockMovement) error {
+func (r *Repository) CreateStockMovement(ctx context.Context, sm *models.StockMovement) error {
 	_, err := r.db.NewInsert().Model(sm).Exec(ctx)
 
 	return err
 }
 
-func (r *Repository) UpdateStockMovement(ctx context.Context, sm *StockMovement) error {
+func (r *Repository) UpdateStockMovement(ctx context.Context, sm *models.StockMovement) error {
 	_, err := r.db.NewUpdate().
 		Model(sm).
 		Column("product_id", "change_amount", "reason", "reference_id").
@@ -74,7 +72,7 @@ func (r *Repository) UpdateStockMovement(ctx context.Context, sm *StockMovement)
 
 func (r *Repository) DeleteStockMovement(ctx context.Context, uuid string) error {
 	_, err := r.db.NewDelete().
-		Model((*StockMovement)(nil)).
+		Model((*models.StockMovement)(nil)).
 		Where("uuid = ?", uuid).
 		Exec(ctx)
 
@@ -83,7 +81,7 @@ func (r *Repository) DeleteStockMovement(ctx context.Context, uuid string) error
 
 func (r *Repository) UpdateStockMovementStatus(ctx context.Context, uuid string) error {
 	_, err := r.db.NewUpdate().
-		Model((*StockMovement)(nil)).
+		Model((*models.StockMovement)(nil)).
 		Set("status = CASE WHEN status = 'A' THEN 'I' ELSE 'A' END").
 		Set("updated_at = ?", time.Now()).
 		Where("uuid = ?", uuid).
@@ -106,7 +104,7 @@ func (r *Repository) ProcessBulkUpload(ctx context.Context, rows [][]string) err
 	// Worker Pool: The middle ground—processes immediately but limits how many run at once so your server doesn't explode.
 
 	return r.db.RunInTx(ctx, nil, func(ctx context.Context, tx bun.Tx) error {
-		var categories []categories.Category
+		var categories []models.Category
 		type excelData struct {
 			sku         string
 			name        string
@@ -199,14 +197,14 @@ func (r *Repository) ProcessBulkUpload(ctx context.Context, rows [][]string) err
 			return err
 		}
 
-		var inventoryItems []inventories.Inventory
-		var stock_movements []StockMovement
+		var inventoryItems []models.Inventory
+		var stock_movements []models.StockMovement
 
 		for _, p := range items {
 			if _, ok := skuMap[p.SKU]; ok {
 				qty := skuMap[p.SKU].quantity
 
-				inventoryItem := inventories.Inventory{
+				inventoryItem := models.Inventory{
 					ProductID:         p.ID,
 					Quantity:          qty,
 					LowStockThreshold: 5,
@@ -215,7 +213,7 @@ func (r *Repository) ProcessBulkUpload(ctx context.Context, rows [][]string) err
 				inventoryItems = append(inventoryItems, inventoryItem)
 
 				if qty > 0 {
-					stock_movement := StockMovement{
+					stock_movement := models.StockMovement{
 						ProductID:    p.ID,
 						ChangeAmount: qty,
 						Reason:       "FROM_IMPORT",

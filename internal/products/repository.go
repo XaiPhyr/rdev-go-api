@@ -4,9 +4,8 @@ import (
 	"context"
 	"time"
 
-	"github.com/XaiPhyr/rdev-go-api/internal/inventories"
 	"github.com/XaiPhyr/rdev-go-api/internal/shared/dto"
-	"github.com/XaiPhyr/rdev-go-api/internal/stock_movements"
+	"github.com/XaiPhyr/rdev-go-api/internal/shared/models"
 	"github.com/uptrace/bun"
 )
 
@@ -18,8 +17,8 @@ func NewProductRepository(db *bun.DB) *Repository {
 	return &Repository{db: db}
 }
 
-func (r *Repository) GetProductByUUID(ctx context.Context, uuid string) (*Product, error) {
-	product := new(Product)
+func (r *Repository) GetProductByUUID(ctx context.Context, uuid string) (*models.Product, error) {
+	product := new(models.Product)
 
 	err := r.db.NewSelect().
 		Model(product).
@@ -33,8 +32,8 @@ func (r *Repository) GetProductByUUID(ctx context.Context, uuid string) (*Produc
 	return product, nil
 }
 
-func (r *Repository) GetProducts(ctx context.Context, q dto.BaseFilters) ([]Product, int, error) {
-	var products []Product
+func (r *Repository) GetProducts(ctx context.Context, q dto.BaseFilters) ([]models.Product, int, error) {
+	var products []models.Product
 
 	count, err := r.db.NewSelect().
 		Model(&products).
@@ -59,8 +58,8 @@ func (r *Repository) GetProducts(ctx context.Context, q dto.BaseFilters) ([]Prod
 	return products, count, nil
 }
 
-func (r *Repository) GetProductsPublic(ctx context.Context, q dto.BaseFilters) ([]Product, int, error) {
-	var products []Product
+func (r *Repository) GetProductsPublic(ctx context.Context, q dto.BaseFilters) ([]models.Product, int, error) {
+	var products []models.Product
 
 	count, err := r.db.NewSelect().
 		Model(&products).
@@ -78,8 +77,8 @@ func (r *Repository) GetProductsPublic(ctx context.Context, q dto.BaseFilters) (
 	return products, count, nil
 }
 
-func (r *Repository) GetProductsBackoffice(ctx context.Context, q dto.BaseFilters) ([]Product, int, error) {
-	var products []Product
+func (r *Repository) GetProductsBackoffice(ctx context.Context, q dto.BaseFilters) ([]models.Product, int, error) {
+	var products []models.Product
 
 	count, err := r.db.NewSelect().
 		Model(&products).
@@ -97,13 +96,13 @@ func (r *Repository) GetProductsBackoffice(ctx context.Context, q dto.BaseFilter
 	return products, count, nil
 }
 
-func (r *Repository) CreateProduct(ctx context.Context, product *Product, initQty int64) error {
+func (r *Repository) CreateProduct(ctx context.Context, product *models.Product, initQty int64) error {
 	return r.db.RunInTx(ctx, nil, func(ctx context.Context, tx bun.Tx) error {
 		if _, err := tx.NewInsert().Model(product).Exec(ctx); err != nil {
 			return err
 		}
 
-		inventory := &inventories.Inventory{
+		inventory := &models.Inventory{
 			ProductID:         product.ID,
 			Quantity:          initQty,
 			LowStockThreshold: 5,
@@ -113,7 +112,7 @@ func (r *Repository) CreateProduct(ctx context.Context, product *Product, initQt
 			return err
 		}
 
-		stock_movement := &stock_movements.StockMovement{
+		stock_movement := &models.StockMovement{
 			ProductID:    product.ID,
 			ChangeAmount: initQty,
 			Reason:       "INITIAL_STOCKS",
@@ -127,7 +126,7 @@ func (r *Repository) CreateProduct(ctx context.Context, product *Product, initQt
 	})
 }
 
-func (r *Repository) UpdateProduct(ctx context.Context, product *Product) error {
+func (r *Repository) UpdateProduct(ctx context.Context, product *models.Product) error {
 	_, err := r.db.NewUpdate().
 		Model(product).
 		Column("category_id", "name", "slug", "description", "sku", "barcode", "price", "cost_price").
@@ -140,7 +139,7 @@ func (r *Repository) UpdateProduct(ctx context.Context, product *Product) error 
 
 func (r *Repository) DeleteProduct(ctx context.Context, uuid string) error {
 	_, err := r.db.NewDelete().
-		Model((*Product)(nil)).
+		Model((*models.Product)(nil)).
 		Where("uuid = ?", uuid).
 		Exec(ctx)
 
@@ -149,7 +148,7 @@ func (r *Repository) DeleteProduct(ctx context.Context, uuid string) error {
 
 func (r *Repository) UpdateProductStatus(ctx context.Context, uuid string) error {
 	_, err := r.db.NewUpdate().
-		Model((*Product)(nil)).
+		Model((*models.Product)(nil)).
 		Set("status = CASE WHEN status = 'A' THEN 'I' ELSE 'A' END").
 		Set("updated_at = ?", time.Now()).
 		Where("uuid = ?", uuid).
