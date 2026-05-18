@@ -1,0 +1,26 @@
+name: Go Test Pipeline
+
+# Trigger the workflow on every push to the main branch
+on:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  test:
+    name: Run Unit Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/checkout@v4
+        with:
+          go-version-file: 'go.mod'
+
+      - name: Install dependencies
+        run: go mod download
+
+      - name: Run tests
+        run: go test -v ./...
