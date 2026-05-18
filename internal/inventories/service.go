@@ -31,12 +31,12 @@ type InventoryService interface {
 
 type service struct {
 	r        InventoryRepository
-	es       *email.EmailService
+	es       email.EmailService
 	redis    *redis.Client
 	auditLog audit_logs.AuditLogService
 }
 
-func NewInventoryService(r InventoryRepository, es *email.EmailService, redis *redis.Client, auditLog audit_logs.AuditLogService) *service {
+func NewInventoryService(r InventoryRepository, es email.EmailService, redis *redis.Client, auditLog audit_logs.AuditLogService) *service {
 	return &service{r: r, es: es, redis: redis, auditLog: auditLog}
 }
 

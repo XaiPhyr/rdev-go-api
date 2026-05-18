@@ -6,21 +6,25 @@ import (
 	"strings"
 )
 
-type EmailService struct {
+type EmailService interface {
+	SendEmail(to string) error
+}
+
+type service struct {
 	Host string
 	Port string
 	From string
 }
 
-func NewEmailService(host, port, from string) *EmailService {
-	return &EmailService{
+func NewEmailService(host, port, from string) *service {
+	return &service{
 		Host: host,
 		Port: port,
 		From: from,
 	}
 }
 
-func (s *EmailService) SendEmail(to string) error {
+func (s *service) SendEmail(to string) error {
 	subject := "Welcome!"
 	body := "This is a test message using MailHog."
 

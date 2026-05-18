@@ -33,12 +33,12 @@ type CategoryService interface {
 
 type service struct {
 	r        CategoryRepository
-	es       *email.EmailService
+	es       email.EmailService
 	redis    *redis.Client
 	auditLog audit_logs.AuditLogService
 }
 
-func NewCategoryService(r CategoryRepository, es *email.EmailService, redis *redis.Client, auditLog audit_logs.AuditLogService) *service {
+func NewCategoryService(r CategoryRepository, es email.EmailService, redis *redis.Client, auditLog audit_logs.AuditLogService) *service {
 	return &service{r: r, es: es, redis: redis, auditLog: auditLog}
 }
 

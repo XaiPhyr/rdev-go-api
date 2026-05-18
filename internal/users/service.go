@@ -33,12 +33,12 @@ type UserService interface {
 
 type service struct {
 	r        UserRepository
-	es       *email.EmailService
+	es       email.EmailService
 	redis    *redis.Client
 	auditLog audit_logs.AuditLogService
 }
 
-func NewUserService(r UserRepository, es *email.EmailService, redis *redis.Client, auditLog audit_logs.AuditLogService) *service {
+func NewUserService(r UserRepository, es email.EmailService, redis *redis.Client, auditLog audit_logs.AuditLogService) *service {
 	return &service{r: r, es: es, redis: redis, auditLog: auditLog}
 }
 

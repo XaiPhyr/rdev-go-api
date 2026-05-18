@@ -54,7 +54,7 @@ func setupAuthRoutes(rg *gin.RouterGroup, authSvc auth.AuthService) {
 	rg.POST("/register", authHandler.Register)
 }
 
-func setupUserRoutes(rg *gin.RouterGroup, userRepo users.UserRepository, authSvc auth.AuthService, emailSvc *email.EmailService, redis *redis.Client, auditLog audit_logs.AuditLogService) {
+func setupUserRoutes(rg *gin.RouterGroup, userRepo users.UserRepository, authSvc auth.AuthService, emailSvc email.EmailService, redis *redis.Client, auditLog audit_logs.AuditLogService) {
 	userSvc := users.NewUserService(userRepo, emailSvc, redis, auditLog)
 	userHandler := users.NewUserHandler(userSvc)
 
@@ -69,7 +69,7 @@ func setupUserRoutes(rg *gin.RouterGroup, userRepo users.UserRepository, authSvc
 	userRoute.POST("/updatestatus/:uuid", middleware.PermissionRequired(authSvc, "users:status"), userHandler.UpdateUserStatus)
 }
 
-func setupCategoryRoutes(rg *gin.RouterGroup, categoryRepo categories.CategoryRepository, authSvc auth.AuthService, emailSvc *email.EmailService, redis *redis.Client, auditLog audit_logs.AuditLogService) {
+func setupCategoryRoutes(rg *gin.RouterGroup, categoryRepo categories.CategoryRepository, authSvc auth.AuthService, emailSvc email.EmailService, redis *redis.Client, auditLog audit_logs.AuditLogService) {
 	categorySvc := categories.NewCategoryService(categoryRepo, emailSvc, redis, auditLog)
 	categoryHandler := categories.NewCategoryHandler(categorySvc)
 
@@ -85,7 +85,7 @@ func setupCategoryRoutes(rg *gin.RouterGroup, categoryRepo categories.CategoryRe
 	categoryRoute.GET("/tree", middleware.PermissionRequired(authSvc, "categories:view"), categoryHandler.GetCategoryTree)
 }
 
-func setupProductRoutes(rg *gin.RouterGroup, productRepo products.ProductRepository, authSvc auth.AuthService, emailSvc *email.EmailService, redis *redis.Client, auditLog audit_logs.AuditLogService) {
+func setupProductRoutes(rg *gin.RouterGroup, productRepo products.ProductRepository, authSvc auth.AuthService, emailSvc email.EmailService, redis *redis.Client, auditLog audit_logs.AuditLogService) {
 	productSvc := products.NewProductService(productRepo, emailSvc, redis, auditLog)
 	productHandler := products.NewProductHandler(productSvc)
 
@@ -102,7 +102,7 @@ func setupProductRoutes(rg *gin.RouterGroup, productRepo products.ProductReposit
 	productRoute.GET("/backoffice", middleware.PermissionRequired(authSvc, "products:view"), productHandler.GetProductsBackoffice)
 }
 
-func setupInventoryRoutes(rg *gin.RouterGroup, inventoryRepo inventories.InventoryRepository, authSvc auth.AuthService, emailSvc *email.EmailService, redis *redis.Client, auditLog audit_logs.AuditLogService) {
+func setupInventoryRoutes(rg *gin.RouterGroup, inventoryRepo inventories.InventoryRepository, authSvc auth.AuthService, emailSvc email.EmailService, redis *redis.Client, auditLog audit_logs.AuditLogService) {
 	inventorySvc := inventories.NewInventoryService(inventoryRepo, emailSvc, redis, auditLog)
 	inventoryHandler := inventories.NewInventoryHandler(inventorySvc)
 
@@ -117,7 +117,7 @@ func setupInventoryRoutes(rg *gin.RouterGroup, inventoryRepo inventories.Invento
 	inventoryRoute.POST("/updatestatus/:uuid", middleware.PermissionRequired(authSvc, "inventories:status"), inventoryHandler.UpdateInventoryStatus)
 }
 
-func setupStockMovementRoutes(rg *gin.RouterGroup, stockMovementRepo stock_movements.StockMovementRepository, authSvc auth.AuthService, emailSvc *email.EmailService, redis *redis.Client, auditLog audit_logs.AuditLogService) {
+func setupStockMovementRoutes(rg *gin.RouterGroup, stockMovementRepo stock_movements.StockMovementRepository, authSvc auth.AuthService, emailSvc email.EmailService, redis *redis.Client, auditLog audit_logs.AuditLogService) {
 	stockMovementSvc := stock_movements.NewStockMovementService(stockMovementRepo, emailSvc, redis, auditLog)
 	stockMovementHandler := stock_movements.NewStockMovementHandler(stockMovementSvc)
 

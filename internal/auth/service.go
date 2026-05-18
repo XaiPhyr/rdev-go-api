@@ -26,12 +26,12 @@ type AuthService interface {
 
 type service struct {
 	r     users.UserRepository
-	es    *email.EmailService
+	es    email.EmailService
 	redis *redis.Client
 	c     *config.Config
 }
 
-func NewAuthService(r users.UserRepository, es *email.EmailService, redis *redis.Client, c *config.Config) *service {
+func NewAuthService(r users.UserRepository, es email.EmailService, redis *redis.Client, c *config.Config) *service {
 	return &service{r: r, es: es, redis: redis, c: c}
 }
 

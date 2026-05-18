@@ -35,12 +35,12 @@ type ProductService interface {
 
 type service struct {
 	r        ProductRepository
-	es       *email.EmailService
+	es       email.EmailService
 	redis    *redis.Client
 	auditLog audit_logs.AuditLogService
 }
 
-func NewProductService(r ProductRepository, es *email.EmailService, redis *redis.Client, auditLog audit_logs.AuditLogService) *service {
+func NewProductService(r ProductRepository, es email.EmailService, redis *redis.Client, auditLog audit_logs.AuditLogService) *service {
 	return &service{r: r, es: es, redis: redis, auditLog: auditLog}
 }
 

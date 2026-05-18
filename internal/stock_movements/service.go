@@ -41,12 +41,12 @@ type StockMovementService interface {
 
 type service struct {
 	r        StockMovementRepository
-	es       *email.EmailService
+	es       email.EmailService
 	redis    *redis.Client
 	auditLog audit_logs.AuditLogService
 }
 
-func NewStockMovementService(r StockMovementRepository, es *email.EmailService, redis *redis.Client, auditLog audit_logs.AuditLogService) *service {
+func NewStockMovementService(r StockMovementRepository, es email.EmailService, redis *redis.Client, auditLog audit_logs.AuditLogService) *service {
 	return &service{r: r, es: es, redis: redis, auditLog: auditLog}
 }
 
