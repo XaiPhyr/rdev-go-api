@@ -147,6 +147,9 @@ func (r *Repository) ProcessBulkUpload(ctx context.Context, rows [][]string) err
 			return price
 		}
 
+		// @TODO: Select Products IN SKU, check conflict if same product name different SKU, log the error proceed with the rest of the products,
+		// to avoid the whole batch to fail if there is a single error with the data, and also to avoid duplicate products with same name but different SKU
+
 		for i, r := range rows {
 			if i == 0 && len(r) < 8 {
 				continue
