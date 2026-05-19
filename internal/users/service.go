@@ -14,8 +14,8 @@ import (
 type UserRepository interface {
 	GetUserByUUID(ctx context.Context, uuid string) (*User, error)
 	GetUsers(ctx context.Context, filters dto.BaseFilters) ([]User, int, error)
-	CreateUser(ctx context.Context, category *User) error
-	UpdateUser(ctx context.Context, category *User) error
+	CreateUser(ctx context.Context, user *User) error
+	UpdateUser(ctx context.Context, user *User) error
 	DeleteUser(ctx context.Context, uuid string) error
 	UpdateUserStatus(ctx context.Context, uuid string) error
 	GetUserByUsernameOrEmail(ctx context.Context, identifier string) (*User, error)
