@@ -16,8 +16,8 @@ type ProductRepository interface {
 	GetProducts(ctx context.Context, filters dto.BaseFilters) ([]models.Product, int, error)
 	GetProductsPublic(ctx context.Context, q dto.BaseFilters) ([]models.Product, int, error)
 	GetProductsBackoffice(ctx context.Context, q dto.BaseFilters) ([]models.Product, int, error)
-	CreateProduct(ctx context.Context, category *models.Product, initQty int64) error
-	UpdateProduct(ctx context.Context, category *models.Product) error
+	CreateProduct(ctx context.Context, product *models.Product, initQty int64) error
+	UpdateProduct(ctx context.Context, product *models.Product) error
 	DeleteProduct(ctx context.Context, uuid string) error
 	UpdateProductStatus(ctx context.Context, uuid string) error
 }
