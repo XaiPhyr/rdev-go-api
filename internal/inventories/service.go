@@ -14,8 +14,8 @@ import (
 type InventoryRepository interface {
 	GetInventoryByUUID(ctx context.Context, uuid string) (*models.Inventory, error)
 	GetInventories(ctx context.Context, filters dto.BaseFilters) ([]models.Inventory, int, error)
-	CreateInventory(ctx context.Context, category *models.Inventory) error
-	UpdateInventory(ctx context.Context, category *models.Inventory) error
+	CreateInventory(ctx context.Context, inventory *models.Inventory) error
+	UpdateInventory(ctx context.Context, inventory *models.Inventory) error
 	DeleteInventory(ctx context.Context, uuid string) error
 	UpdateInventoryStatus(ctx context.Context, uuid string) error
 }
