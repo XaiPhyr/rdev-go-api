@@ -53,7 +53,6 @@ func (m *ProductTest) GetProductsPublic(ctx context.Context, q dto.BaseFilters) 
 
 	return nil, 0, nil
 }
-
 func (m *ProductTest) CreateProduct(ctx context.Context, product *models.Product, initQty int64) error {
 	if m.CreateProductFunc != nil {
 		return m.CreateProductFunc(ctx, product, initQty)
