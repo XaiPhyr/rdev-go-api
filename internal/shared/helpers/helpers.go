@@ -1,6 +1,9 @@
 package helpers
 
 import (
+	"strings"
+	"testing"
+
 	"github.com/XaiPhyr/rdev-go-api/internal/shared/models"
 	"github.com/gin-gonic/gin"
 )
@@ -25,4 +28,18 @@ func ParseAuditLog(ctx *gin.Context) models.AuditLogRequest {
 	}
 
 	return audit
+}
+
+func CleanSpaces(s string) string {
+	return strings.TrimSpace(s)
+}
+
+func CheckUUID(t testing.TB, uuid string) string {
+	t.Helper()
+
+	if uuid == "" {
+		t.Error("Expected UUID to be provided")
+	}
+
+	return uuid
 }
