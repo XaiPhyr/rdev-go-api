@@ -1,7 +1,9 @@
 package helpers
 
 import (
-	"strings"
+	"log/slog"
+	"os"
+	"regexp"
 	"testing"
 
 	"github.com/XaiPhyr/rdev-go-api/internal/shared/models"
@@ -30,8 +32,16 @@ func ParseAuditLog(ctx *gin.Context) models.AuditLogRequest {
 	return audit
 }
 
-func CleanSpaces(s string) string {
-	return strings.TrimSpace(s)
+func LogInfo(msg string, args ...any) {
+	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
+	logger.Info(msg, args...)
+}
+
+func CleanSpecialChars(s string) string {
+	re := regexp.MustCompile(`[!@#$%^&*()\_\+\=]`)
+	clean := re.ReplaceAll([]byte(s), []byte(``))
+
+	return string(clean)
 }
 
 func CheckUUID(t testing.TB, uuid string) string {
