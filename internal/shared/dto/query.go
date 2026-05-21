@@ -1,5 +1,11 @@
 package dto
 
+import (
+	"strings"
+
+	"github.com/XaiPhyr/rdev-go-api/internal/shared/helpers"
+)
+
 type BaseFilters struct {
 	Page     int    `json:"page" query:"page"`
 	PageSize int    `json:"page_size" query:"page_size"`
@@ -19,6 +25,11 @@ func (q Query) SanitizeQuery(allowedSortColumns []string) BaseFilters {
 	pageSize := q.Limit
 	if pageSize <= 0 {
 		pageSize = 10
+	}
+
+	if q.Search != "" {
+		cleanSpaces := strings.TrimSpace(q.Search)
+		q.Search = helpers.CleanSpecialChars(cleanSpaces)
 	}
 
 	return BaseFilters{
