@@ -3,16 +3,25 @@ package orders_test
 import (
 	"context"
 	"errors"
+	"fmt"
+	"strings"
 	"testing"
 	"time"
 
 	"github.com/XaiPhyr/rdev-go-api/internal/mocks"
 	"github.com/XaiPhyr/rdev-go-api/internal/orders"
+	"github.com/XaiPhyr/rdev-go-api/internal/shared/dto"
+	"github.com/XaiPhyr/rdev-go-api/internal/shared/helpers"
 	"github.com/XaiPhyr/rdev-go-api/internal/shared/models"
 )
 
 type OrderTest struct {
-	GetOrderByUUIDFunc func(ctx context.Context, uuid string) (*models.Order, error)
+	GetOrderByUUIDFunc    func(ctx context.Context, uuid string) (*models.Order, error)
+	GetOrdersFunc         func(ctx context.Context, q dto.BaseFilters) ([]models.Order, int, error)
+	CreateOrderFunc       func(ctx context.Context, order *models.Order) (*models.Order, error)
+	UpdateOrderFunc       func(ctx context.Context, order *models.Order) (*models.Order, error)
+	DeleteOrderFunc       func(ctx context.Context, uuid string) error
+	UpdateOrderStatusFunc func(ctx context.Context, uuid string) error
 }
 
 func (m *OrderTest) GetOrderByUUID(ctx context.Context, uuid string) (*models.Order, error) {
@@ -21,6 +30,41 @@ func (m *OrderTest) GetOrderByUUID(ctx context.Context, uuid string) (*models.Or
 	}
 
 	return nil, nil
+}
+func (m *OrderTest) GetOrders(ctx context.Context, q dto.BaseFilters) ([]models.Order, int, error) {
+	if m.GetOrdersFunc != nil {
+		return m.GetOrdersFunc(ctx, q)
+	}
+
+	return nil, 0, nil
+}
+func (m *OrderTest) CreateOrder(ctx context.Context, order *models.Order) (*models.Order, error) {
+	if m.CreateOrderFunc != nil {
+		return m.CreateOrderFunc(ctx, order)
+	}
+
+	return nil, nil
+}
+func (m *OrderTest) UpdateOrder(ctx context.Context, order *models.Order) (*models.Order, error) {
+	if m.UpdateOrderFunc != nil {
+		return m.UpdateOrderFunc(ctx, order)
+	}
+
+	return nil, nil
+}
+func (m *OrderTest) DeleteOrder(ctx context.Context, uuid string) error {
+	if m.DeleteOrderFunc != nil {
+		return m.DeleteOrderFunc(ctx, uuid)
+	}
+
+	return nil
+}
+func (m *OrderTest) UpdateOrderStatus(ctx context.Context, uuid string) error {
+	if m.UpdateOrderStatusFunc != nil {
+		return m.UpdateOrderStatusFunc(ctx, uuid)
+	}
+
+	return nil
 }
 
 func TestOrders(t *testing.T) {
@@ -60,7 +104,7 @@ func TestOrders(t *testing.T) {
 			callCount++
 			var order models.Order
 
-			order.ID = 1
+			order.OrderNumber = "ORD-001"
 
 			if callCount > 3 {
 				return nil, errors.New("Rate limit exceeded")
@@ -85,12 +129,91 @@ func TestOrders(t *testing.T) {
 		testOrderRepo.GetOrderByUUIDFunc = func(ctx context.Context, uuid string) (*models.Order, error) {
 			var order models.Order
 
-			order.OrderNumber = "12345678901234567890123456789012345678901234567890"
+			order.OrderNumber = "ORD-001"
 
 			return &order, nil
 		}
 
 		_, err := testOrderSvc.GetOrderByUUID(context.Background(), validUUID)
+
+		if err != nil {
+			t.Errorf("Expected no error, got %v", err)
+		}
+	})
+
+	t.Run("Get Orders Search with Special Characters", func(t *testing.T) {
+		testOrderRepo.GetOrdersFunc = func(ctx context.Context, q dto.BaseFilters) ([]models.Order, int, error) {
+			if strings.HasPrefix(q.Search, " ") || strings.HasSuffix(q.Search, " ") {
+				return nil, 0, fmt.Errorf("Search has prefix/suffix spaces %s", q.Search)
+			}
+
+			return []models.Order{{OrderNumber: "ORD-001"}}, 0, nil
+		}
+
+		search := "ORD-1929%$@1982@ "
+		cleanedSearch := helpers.CleanSpecialChars(search)
+		query := dto.Query{Search: cleanedSearch}
+
+		_, _, err := testOrderSvc.GetOrders(context.Background(), query)
+
+		if err != nil {
+			t.Errorf("Expected no error, got %v", err)
+		}
+	})
+
+	t.Run("Create Order with no total amount", func(t *testing.T) {
+		testOrderRepo.CreateOrderFunc = func(ctx context.Context, order *models.Order) (*models.Order, error) {
+			return &models.Order{OrderNumber: "ORD-001"}, nil
+		}
+
+		ord := &models.Order{
+			TotalAmount: 1,
+		}
+
+		_, err := testOrderSvc.CreateOrder(context.Background(), ord)
+
+		if err != nil {
+			t.Errorf("Expected no error, got %v", err)
+		}
+	})
+
+	t.Run("Update Order with no customer id or no uuid", func(t *testing.T) {
+		testOrderRepo.UpdateOrderFunc = func(ctx context.Context, order *models.Order) (*models.Order, error) {
+			return &models.Order{OrderNumber: "ORD-001"}, nil
+		}
+
+		validUUID := "12345678-1234-1234-1234-123456789012"
+		customer_id := int64(1)
+		ord := orders.OrderRequest{CustomerID: &customer_id}
+		_, err := testOrderSvc.UpdateOrder(context.Background(), validUUID, ord)
+
+		if err != nil {
+			t.Errorf("Expected no error, got %v", err)
+		}
+	})
+
+	t.Run("Delete Order with no uuid", func(t *testing.T) {
+		testOrderRepo.DeleteOrderFunc = func(ctx context.Context, uuid string) error {
+			return nil
+		}
+
+		validUUID := "12345678-1234-1234-1234-123456789012"
+
+		err := testOrderSvc.DeleteOrder(context.Background(), validUUID)
+
+		if err != nil {
+			t.Errorf("Expected no error, got %v", err)
+		}
+	})
+
+	t.Run("Update Order Status with no uuid", func(t *testing.T) {
+		testOrderRepo.UpdateOrderStatusFunc = func(ctx context.Context, uuid string) error {
+			return nil
+		}
+
+		validUUID := "12345678-1234-1234-1234-123456789012"
+
+		err := testOrderSvc.UpdateOrderStatus(context.Background(), validUUID)
 
 		if err != nil {
 			t.Errorf("Expected no error, got %v", err)
