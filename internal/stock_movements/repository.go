@@ -214,9 +214,9 @@ func (r *Repository) ProcessBulkUpload(ctx context.Context, rows [][]string) ([]
 
 			item := models.Product{
 				SKU:         sku,
-				Name:        data.name,
-				Description: data.name,
-				Slug:        data.slug,
+				Name:        helpers.CleanSpecialChars(data.name),
+				Description: helpers.CleanSpecialChars(data.name),
+				Slug:        helpers.CleanSpecialChars(data.slug),
 				Price:       data.price,
 				Barcode:     data.barcode,
 				CategoryID:  categoryID,

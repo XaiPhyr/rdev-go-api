@@ -225,7 +225,7 @@ func TestStockMovement(t *testing.T) {
 					invalidProducts[i] = fmt.Sprintf("ROW: %d - NAME: %s", i+1, name)
 				}
 
-				validProducts = append(validProducts, models.Product{Name: name, SKU: sku})
+				validProducts = append(validProducts, models.Product{Name: helpers.CleanSpecialChars(name), SKU: helpers.CleanSpecialChars(sku)})
 			}
 
 			t.Log("INVALID PRODUCTS: ", invalidProducts)
