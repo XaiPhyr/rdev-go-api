@@ -10,3 +10,10 @@ type StockMovementRequest struct {
 type BulkUploadRequest struct {
 	File string `json:"file"`
 }
+
+type BulkUploadErrResponse struct {
+	Row         int    `json:"row"`
+	Name        string `json:"name"`
+	SKU         string `json:"sku"`
+	ExistingSKU string `json:"existing_sku"`
+}

@@ -25,7 +25,7 @@ type StockMovementRepository interface {
 	UpdateStockMovement(ctx context.Context, sm *models.StockMovement) error
 	DeleteStockMovement(ctx context.Context, uuid string) error
 	UpdateStockMovementStatus(ctx context.Context, uuid string) error
-	ProcessBulkUpload(ctx context.Context, row [][]string) error
+	ProcessBulkUpload(ctx context.Context, row [][]string) ([]BulkUploadErrResponse, error)
 }
 
 type StockMovementService interface {
@@ -36,7 +36,7 @@ type StockMovementService interface {
 	DeleteStockMovement(ctx context.Context, uuid string, audit models.AuditLogRequest) error
 	UpdateStockMovementStatus(ctx context.Context, uuid string, audit models.AuditLogRequest) error
 	BulkUpload(ctx context.Context, fileHeader *multipart.FileHeader, audit models.AuditLogRequest) error
-	ProcessBulkUpload(ctx context.Context, fileName string, audit models.AuditLogRequest) error
+	ProcessBulkUpload(ctx context.Context, fileName string, audit models.AuditLogRequest) ([]BulkUploadErrResponse, error)
 }
 
 type service struct {
@@ -186,18 +186,18 @@ func (s *service) BulkUpload(ctx context.Context, fileHeader *multipart.FileHead
 	return err
 }
 
-func (s *service) ProcessBulkUpload(ctx context.Context, fileName string, audit models.AuditLogRequest) error {
+func (s *service) ProcessBulkUpload(ctx context.Context, fileName string, audit models.AuditLogRequest) ([]BulkUploadErrResponse, error) {
 	f, err := excelize.OpenFile(filepath.Join("./files/", filepath.Base(fileName)))
 	if err != nil {
-		return fmt.Errorf("could not open file: %w", err)
+		return nil, fmt.Errorf("could not open file: %w", err)
 	}
 
 	rows, err := f.GetRows("Sheet1")
 	if err != nil {
-		return fmt.Errorf("could not open sheet: %w", err)
+		return nil, fmt.Errorf("could not open sheet: %w", err)
 	}
 
-	err = s.r.ProcessBulkUpload(ctx, rows)
+	invalidProducts, err := s.r.ProcessBulkUpload(ctx, rows)
 
-	return err
+	return invalidProducts, err
 }

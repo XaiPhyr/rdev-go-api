@@ -132,9 +132,14 @@ func (h *Handler) ProcessBulkUpload(ctx *gin.Context) {
 		return
 	}
 
-	err := h.svc.ProcessBulkUpload(ctx.Request.Context(), req.File, helpers.ParseAuditLog(ctx))
+	invalidProducts, err := h.svc.ProcessBulkUpload(ctx.Request.Context(), req.File, helpers.ParseAuditLog(ctx))
 	if err != nil {
 		helpers.ResponseErr(ctx, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	if len(invalidProducts) > 0 {
+		ctx.JSON(http.StatusOK, invalidProducts)
 		return
 	}
 
