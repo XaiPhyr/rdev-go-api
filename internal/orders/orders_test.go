@@ -39,6 +39,24 @@ func (m *OrderTest) GetOrders(ctx context.Context, q dto.BaseFilters) ([]models.
 	return nil, 0, nil
 }
 func (m *OrderTest) CreateOrder(ctx context.Context, order *models.Order) (*models.Order, error) {
+	if len(order.OrderItem) == 0 {
+		return nil, errors.New("Order must have order items")
+	}
+
+	for _, oi := range order.OrderItem {
+		if oi.OrderID == 0 || oi.ProductID == 0 || oi.TransactionPrice == 0 || oi.Quantity == 0 {
+			return nil, errors.New("Order ID/Product ID/Transaction Price/Quantity must not be 0")
+		}
+		if oi.Quantity < 0 {
+			return nil, errors.New("Quantity must not be negative")
+		}
+	}
+
+	err := helpers.ValidateStruct(order)
+	if err != nil {
+		return nil, fmt.Errorf("Validation error check field %v", err)
+	}
+
 	if m.CreateOrderFunc != nil {
 		return m.CreateOrderFunc(ctx, order)
 	}
@@ -214,6 +232,23 @@ func TestOrders(t *testing.T) {
 		validUUID := "12345678-1234-1234-1234-123456789012"
 
 		err := testOrderSvc.UpdateOrderStatus(context.Background(), validUUID)
+
+		if err != nil {
+			t.Errorf("Expected no error, got %v", err)
+		}
+	})
+
+	t.Run("Order with no order item", func(t *testing.T) {
+		testOrderRepo.CreateOrderFunc = func(ctx context.Context, order *models.Order) (*models.Order, error) {
+			return nil, nil
+		}
+
+		order_item := []models.OrderItem{
+			{OrderID: 1, ProductID: 1, TransactionPrice: 1, Quantity: 1},
+		}
+		order := &models.Order{CustomerID: 1, TotalAmount: 50, OrderItem: order_item}
+
+		_, err := testOrderSvc.CreateOrder(context.Background(), order)
 
 		if err != nil {
 			t.Errorf("Expected no error, got %v", err)

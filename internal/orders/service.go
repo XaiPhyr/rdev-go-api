@@ -3,10 +3,12 @@ package orders
 import (
 	"context"
 	"errors"
+	"fmt"
 
 	"github.com/XaiPhyr/rdev-go-api/internal/audit_logs"
 	"github.com/XaiPhyr/rdev-go-api/internal/shared/dto"
 	"github.com/XaiPhyr/rdev-go-api/internal/shared/email"
+	"github.com/XaiPhyr/rdev-go-api/internal/shared/helpers"
 	"github.com/XaiPhyr/rdev-go-api/internal/shared/models"
 	"github.com/redis/go-redis/v9"
 )
@@ -69,6 +71,24 @@ func (s *service) GetOrders(ctx context.Context, q dto.Query) ([]models.Order, i
 func (s *service) CreateOrder(ctx context.Context, order *models.Order) (*models.Order, error) {
 	if order.TotalAmount == 0 {
 		return nil, errors.New("Order must have total amount")
+	}
+
+	if len(order.OrderItem) == 0 {
+		return nil, errors.New("Order must have order items")
+	}
+
+	for _, oi := range order.OrderItem {
+		if oi.OrderID == 0 || oi.ProductID == 0 || oi.TransactionPrice == 0 || oi.Quantity == 0 {
+			return nil, errors.New("Order ID/Product ID/Transaction Price/Quantity must not be 0")
+		}
+		if oi.Quantity < 0 {
+			return nil, errors.New("Quantity must not be negative")
+		}
+	}
+
+	err := helpers.ValidateStruct(order)
+	if err != nil {
+		return nil, fmt.Errorf("Validation error check field %v", err)
 	}
 
 	return s.r.CreateOrder(ctx, order)
