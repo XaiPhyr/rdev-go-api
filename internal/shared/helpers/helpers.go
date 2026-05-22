@@ -8,6 +8,7 @@ import (
 
 	"github.com/XaiPhyr/rdev-go-api/internal/shared/models"
 	"github.com/gin-gonic/gin"
+	"github.com/go-playground/validator/v10"
 )
 
 func ResponseErr(ctx *gin.Context, code int, message string) {
@@ -30,6 +31,12 @@ func ParseAuditLog(ctx *gin.Context) models.AuditLogRequest {
 	}
 
 	return audit
+}
+
+func ValidateStruct(s interface{}) error {
+	validate := validator.New()
+
+	return validate.Struct(s)
 }
 
 func LogInfo(msg string, args ...any) {
