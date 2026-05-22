@@ -2,6 +2,8 @@ package stock_movements
 
 import (
 	"net/http"
+	"os"
+	"path/filepath"
 
 	"github.com/XaiPhyr/rdev-go-api/internal/shared/dto"
 	"github.com/XaiPhyr/rdev-go-api/internal/shared/helpers"
@@ -132,7 +134,15 @@ func (h *Handler) ProcessBulkUpload(ctx *gin.Context) {
 		return
 	}
 
-	invalidProducts, err := h.svc.ProcessBulkUpload(ctx.Request.Context(), req.File, helpers.ParseAuditLog(ctx))
+	filePath := filepath.Join("./files/", filepath.Base(req.File))
+	fileStream, err := os.Open(filePath)
+	if err != nil {
+		helpers.ResponseErr(ctx, http.StatusBadRequest, err.Error())
+		return
+	}
+	defer fileStream.Close()
+
+	invalidProducts, err := h.svc.ProcessBulkUpload(ctx.Request.Context(), fileStream, helpers.ParseAuditLog(ctx))
 	if err != nil {
 		helpers.ResponseErr(ctx, http.StatusBadRequest, err.Error())
 		return

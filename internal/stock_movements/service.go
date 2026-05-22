@@ -36,7 +36,7 @@ type StockMovementService interface {
 	DeleteStockMovement(ctx context.Context, uuid string, audit models.AuditLogRequest) error
 	UpdateStockMovementStatus(ctx context.Context, uuid string, audit models.AuditLogRequest) error
 	BulkUpload(ctx context.Context, fileHeader *multipart.FileHeader, audit models.AuditLogRequest) error
-	ProcessBulkUpload(ctx context.Context, fileName string, audit models.AuditLogRequest) ([]BulkUploadErrResponse, error)
+	ProcessBulkUpload(ctx context.Context, r io.Reader, audit models.AuditLogRequest) ([]BulkUploadErrResponse, error)
 }
 
 type service struct {
@@ -186,11 +186,12 @@ func (s *service) BulkUpload(ctx context.Context, fileHeader *multipart.FileHead
 	return err
 }
 
-func (s *service) ProcessBulkUpload(ctx context.Context, fileName string, audit models.AuditLogRequest) ([]BulkUploadErrResponse, error) {
-	f, err := excelize.OpenFile(filepath.Join("./files/", filepath.Base(fileName)))
+func (s *service) ProcessBulkUpload(ctx context.Context, r io.Reader, audit models.AuditLogRequest) ([]BulkUploadErrResponse, error) {
+	f, err := excelize.OpenReader(r)
 	if err != nil {
 		return nil, fmt.Errorf("could not open file: %w", err)
 	}
+	defer f.Close()
 
 	rows, err := f.GetRows("Sheet1")
 	if err != nil {
