@@ -1,7 +1,9 @@
 package stock_movements_test
 
 import (
+	"bytes"
 	"context"
+	_ "embed"
 	"fmt"
 	"sync"
 	"testing"
@@ -12,6 +14,9 @@ import (
 	"github.com/XaiPhyr/rdev-go-api/internal/shared/models"
 	"github.com/XaiPhyr/rdev-go-api/internal/stock_movements"
 )
+
+//go:embed files/product_master_lists.xlsx
+var testFile []byte
 
 const UUID = "12345678-1234-5678-1234-567890123456"
 
@@ -229,7 +234,7 @@ func TestStockMovement(t *testing.T) {
 			return nil, nil
 		}
 
-		file := "../../files/product_master_lists.xlsx"
+		file := bytes.NewReader(testFile)
 		_, err := testStockMovementSvc.ProcessBulkUpload(context.Background(), file, models.AuditLogRequest{})
 
 		if err != nil {
