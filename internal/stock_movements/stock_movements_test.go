@@ -2,11 +2,13 @@ package stock_movements_test
 
 import (
 	"context"
+	"fmt"
 	"sync"
 	"testing"
 
 	"github.com/XaiPhyr/rdev-go-api/internal/mocks"
 	"github.com/XaiPhyr/rdev-go-api/internal/shared/dto"
+	"github.com/XaiPhyr/rdev-go-api/internal/shared/helpers"
 	"github.com/XaiPhyr/rdev-go-api/internal/shared/models"
 	"github.com/XaiPhyr/rdev-go-api/internal/stock_movements"
 )
@@ -20,7 +22,7 @@ type StockMovementTest struct {
 	UpdateStockMovementFunc       func(ctx context.Context, sm *models.StockMovement) error
 	DeleteStockMovementFunc       func(ctx context.Context, uuid string) error
 	UpdateStockMovementStatusFunc func(ctx context.Context, uuid string) error
-	ProcessBulkUploadFunc         func(ctx context.Context, row [][]string) error
+	ProcessBulkUploadFunc         func(ctx context.Context, row [][]string) ([]stock_movements.BulkUploadErrResponse, error)
 }
 
 func (m *StockMovementTest) GetStockMovementByUUID(ctx context.Context, uuid string) (*models.StockMovement, error) {
@@ -65,12 +67,12 @@ func (m *StockMovementTest) UpdateStockMovementStatus(ctx context.Context, uuid 
 
 	return nil
 }
-func (m *StockMovementTest) ProcessBulkUpload(ctx context.Context, row [][]string) error {
+func (m *StockMovementTest) ProcessBulkUpload(ctx context.Context, row [][]string) ([]stock_movements.BulkUploadErrResponse, error) {
 	if m.ProcessBulkUploadFunc != nil {
 		return m.ProcessBulkUploadFunc(ctx, row)
 	}
 
-	return nil
+	return nil, nil
 }
 
 func TestStockMovement(t *testing.T) {
@@ -170,6 +172,66 @@ func TestStockMovement(t *testing.T) {
 		}
 
 		err := testStockMovementSvc.UpdateStockMovementStatus(context.Background(), CheckUUID(t, UUID), models.AuditLogRequest{})
+		if err != nil {
+			t.Errorf("Expected no error, got %v", err)
+		}
+	})
+
+	t.Run("Process Bulk Upload", func(t *testing.T) {
+		testStockMovementRepo.ProcessBulkUploadFunc = func(ctx context.Context, rows [][]string) ([]stock_movements.BulkUploadErrResponse, error) {
+			excelSKUs := make([]string, len(rows)-1)
+			excelProductNames := make([]string, len(rows)-1)
+			skuMap := make(map[string]int64)
+			nameMap := make(map[string]string)
+
+			existingProducts := []models.Product{
+				{ID: 55, Name: "Mechanical Keyboard", SKU: "MK-492"},
+				{ID: 123, Name: "USB-C Hub", SKU: "AP-104"},
+			}
+			validProducts := []models.Product{}
+			invalidProducts := make(map[int]string)
+
+			for i, r := range rows {
+				if i == 0 && len(r) < 8 {
+					continue
+				}
+
+				excelSKUs[i-1] = helpers.CleanSpecialChars(r[0])         // will be used for SQL IN condition
+				excelProductNames[i-1] = helpers.CleanSpecialChars(r[1]) // will be used for SQL IN condition
+			}
+
+			for _, p := range existingProducts {
+				skuMap[p.SKU] = p.ID
+				nameMap[p.Name] = p.SKU
+			}
+
+			for i, r := range rows {
+				if i == 0 && len(r) < 8 {
+					continue
+				}
+
+				sku := r[0]
+				name := r[1]
+
+				_, skuExists := skuMap[sku]
+				_, nameExists := nameMap[name]
+
+				if !skuExists && nameExists {
+					invalidProducts[i] = fmt.Sprintf("ROW: %d - NAME: %s", i+1, name)
+				}
+
+				validProducts = append(validProducts, models.Product{Name: name, SKU: sku})
+			}
+
+			t.Log("INVALID PRODUCTS: ", invalidProducts)
+			t.Log("VALID PRODUCTS: ", validProducts)
+
+			return nil, nil
+		}
+
+		file := "../../files/product_master_lists.xlsx"
+		_, err := testStockMovementSvc.ProcessBulkUpload(context.Background(), file, models.AuditLogRequest{})
+
 		if err != nil {
 			t.Errorf("Expected no error, got %v", err)
 		}

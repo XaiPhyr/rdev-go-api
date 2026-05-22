@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/XaiPhyr/rdev-go-api/internal/shared/dto"
+	"github.com/XaiPhyr/rdev-go-api/internal/shared/helpers"
 	"github.com/XaiPhyr/rdev-go-api/internal/shared/models"
 	"github.com/uptrace/bun"
 )
@@ -90,7 +91,7 @@ func (r *Repository) UpdateStockMovementStatus(ctx context.Context, uuid string)
 	return err
 }
 
-func (r *Repository) ProcessBulkUpload(ctx context.Context, rows [][]string) error {
+func (r *Repository) ProcessBulkUpload(ctx context.Context, rows [][]string) ([]BulkUploadErrResponse, error) {
 	// Bulk upload for products using excelize
 	// BATCH INSERT instead of single line
 	// Stage 1: []Product insert on conflict sku update RETURNING id
@@ -103,7 +104,8 @@ func (r *Repository) ProcessBulkUpload(ctx context.Context, rows [][]string) err
 	// Cron Job: Best for "Late Night" batch processing.
 	// Worker Pool: The middle ground—processes immediately but limits how many run at once so your server doesn't explode.
 
-	return r.db.RunInTx(ctx, nil, func(ctx context.Context, tx bun.Tx) error {
+	var invalidProducts []BulkUploadErrResponse
+	err := r.db.RunInTx(ctx, nil, func(ctx context.Context, tx bun.Tx) error {
 		var categories []models.Category
 		type excelData struct {
 			sku         string
@@ -115,9 +117,14 @@ func (r *Repository) ProcessBulkUpload(ctx context.Context, rows [][]string) err
 			category_id int64
 		}
 		skuMap := make(map[string]excelData)
+		skuMapExists := make(map[string]int64)
+		nameMapExists := make(map[string]string)
 		categoryMap := make(map[string]int64)
+		excelSKUs := make([]string, len(rows)-1)
+		excelProductNames := make([]string, len(rows)-1)
 
-		var items []models.Product
+		var existingProducts []models.Product
+		var validProducts []models.Product
 
 		err := tx.NewSelect().Model(&categories).Scan(ctx)
 		if err != nil {
@@ -147,8 +154,32 @@ func (r *Repository) ProcessBulkUpload(ctx context.Context, rows [][]string) err
 			return price
 		}
 
-		// @TODO: Select Products IN SKU, check conflict if same product name different SKU, log the error proceed with the rest of the products,
-		// to avoid the whole batch to fail if there is a single error with the data, and also to avoid duplicate products with same name but different SKU
+		for i, r := range rows {
+			if i == 0 && len(r) < 8 {
+				continue
+			}
+
+			excelSKUs[i-1] = helpers.CleanSpecialChars(r[0])
+			excelProductNames[i-1] = helpers.CleanSpecialChars(r[1])
+		}
+
+		err = tx.NewSelect().
+			Model(&existingProducts).
+			WhereGroup(" OR ", func(sq *bun.SelectQuery) *bun.SelectQuery {
+				return sq.WhereOr("sku IN (?)", bun.List(excelSKUs)).
+					WhereOr("name IN (?)", bun.List(excelProductNames))
+			}).Scan(ctx)
+
+		if err != nil {
+			return fmt.Errorf("Cannot fetch products %v", err)
+		}
+
+		if len(existingProducts) > 0 {
+			for _, p := range existingProducts {
+				skuMapExists[p.SKU] = p.ID
+				nameMapExists[p.Name] = p.SKU
+			}
+		}
 
 		for i, r := range rows {
 			if i == 0 && len(r) < 8 {
@@ -162,8 +193,9 @@ func (r *Repository) ProcessBulkUpload(ctx context.Context, rows [][]string) err
 			}
 
 			sku := r[0]
+			name := r[1]
 			data := excelData{
-				name:        r[1],
+				name:        name,
 				slug:        r[2],
 				price:       int64(parseToNumeric(r[3]) * 100),
 				quantity:    int64(parseToNumeric(r[4])),
@@ -171,6 +203,14 @@ func (r *Repository) ProcessBulkUpload(ctx context.Context, rows [][]string) err
 				category_id: categoryID,
 			}
 			skuMap[sku] = data
+
+			_, skuExists := skuMapExists[sku]
+			_, nameExists := nameMapExists[name]
+
+			if !skuExists && nameExists {
+				invalidProducts = append(invalidProducts, BulkUploadErrResponse{Row: i + 1, Name: name, SKU: sku, ExistingSKU: nameMapExists[name]})
+				continue
+			}
 
 			item := models.Product{
 				SKU:         sku,
@@ -182,11 +222,11 @@ func (r *Repository) ProcessBulkUpload(ctx context.Context, rows [][]string) err
 				CategoryID:  categoryID,
 			}
 
-			items = append(items, item)
+			validProducts = append(validProducts, item)
 		}
 
 		_, err = tx.NewInsert().
-			Model(&items).
+			Model(&validProducts).
 			On("CONFLICT (sku) DO UPDATE").
 			Set("name = EXCLUDED.name").
 			Set("slug = EXCLUDED.slug").
@@ -203,7 +243,7 @@ func (r *Repository) ProcessBulkUpload(ctx context.Context, rows [][]string) err
 		var inventoryItems []models.Inventory
 		var stock_movements []models.StockMovement
 
-		for _, p := range items {
+		for _, p := range validProducts {
 			if _, ok := skuMap[p.SKU]; ok {
 				qty := skuMap[p.SKU].quantity
 
@@ -243,4 +283,6 @@ func (r *Repository) ProcessBulkUpload(ctx context.Context, rows [][]string) err
 
 		return nil
 	})
+
+	return invalidProducts, err
 }
