@@ -85,7 +85,7 @@ func (s *service) CreateOrder(ctx context.Context, req OrderRequest, audit model
 
 	if len(req.OrderItem) > 0 {
 		for _, roi := range req.OrderItem {
-			oi := models.OrderItem{}
+			oi := &models.OrderItem{}
 
 			if roi.ProductID != nil {
 				oi.ProductID = *roi.ProductID

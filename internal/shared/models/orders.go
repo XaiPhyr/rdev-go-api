@@ -9,12 +9,12 @@ type Order struct {
 	bun.BaseModel `bun:"table:orders,alias:o"`
 	fields.BaseFields
 
-	CustomerID    int64       `bun:"customer_id" json:"customer_id" validate:"required"`
-	OrderNumber   string      `bun:"order_number" json:"order_number"`
-	OrderStatus   string      `bun:"order_status" json:"order_status"`
-	PaymentStatus string      `bun:"payment_status" json:"payment_status"`
-	TotalAmount   int64       `bun:"total_amount" json:"total_amount"`
-	OrderItem     []OrderItem `bun:"rel:has-many,join:id=order_id" json:"order_item,omitempty"`
+	CustomerID    int64        `bun:"customer_id" json:"customer_id" validate:"required"`
+	OrderNumber   string       `bun:"order_number" json:"order_number"`
+	OrderStatus   string       `bun:"order_status" json:"order_status"`
+	PaymentStatus string       `bun:"payment_status" json:"payment_status"`
+	TotalAmount   int64        `bun:"total_amount" json:"total_amount"`
+	OrderItem     []*OrderItem `bun:"rel:has-many,join:id=order_id" json:"order_item,omitempty"`
 }
 
 type OrderItem struct {
