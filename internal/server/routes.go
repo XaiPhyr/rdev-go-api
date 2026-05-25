@@ -9,6 +9,7 @@ import (
 	"github.com/XaiPhyr/rdev-go-api/internal/config"
 	"github.com/XaiPhyr/rdev-go-api/internal/inventories"
 	"github.com/XaiPhyr/rdev-go-api/internal/middleware"
+	"github.com/XaiPhyr/rdev-go-api/internal/orders"
 	"github.com/XaiPhyr/rdev-go-api/internal/products"
 	"github.com/XaiPhyr/rdev-go-api/internal/shared/email"
 	"github.com/XaiPhyr/rdev-go-api/internal/stock_movements"
@@ -37,6 +38,7 @@ func Container(r *gin.Engine, db *bun.DB, redis *redis.Client, cfg *config.Confi
 	productRepo := products.NewProductRepository(db)
 	inventoryRepo := inventories.NewInventoryRepository(db)
 	stockMovementRepo := stock_movements.NewStockMovementRepository(db)
+	orderRepo := orders.NewRepository(db)
 
 	apiVersion := r.Group("/api/v1")
 	setupAuthRoutes(apiVersion, authSvc)
@@ -45,6 +47,7 @@ func Container(r *gin.Engine, db *bun.DB, redis *redis.Client, cfg *config.Confi
 	setupProductRoutes(apiVersion, productRepo, authSvc, emailSvc, redis, auditLogSvc)
 	setupInventoryRoutes(apiVersion, inventoryRepo, authSvc, emailSvc, redis, auditLogSvc)
 	setupStockMovementRoutes(apiVersion, stockMovementRepo, authSvc, emailSvc, redis, auditLogSvc)
+	setupOrderRoutes(apiVersion, orderRepo, authSvc, emailSvc, redis, auditLogSvc)
 }
 
 func setupAuthRoutes(rg *gin.RouterGroup, authSvc auth.AuthService) {
@@ -132,4 +135,19 @@ func setupStockMovementRoutes(rg *gin.RouterGroup, stockMovementRepo stock_movem
 	stockMovementRoute.POST("/updatestatus/:uuid", middleware.PermissionRequired(authSvc, "stock_movements:status"), stockMovementHandler.UpdateStockMovementStatus)
 	stockMovementRoute.POST("/bulkupload", middleware.PermissionRequired(authSvc, "stock_movements:upload"), stockMovementHandler.BulkUpload)
 	stockMovementRoute.POST("/processbulkupload", middleware.PermissionRequired(authSvc, "stock_movements:process"), stockMovementHandler.ProcessBulkUpload)
+}
+
+func setupOrderRoutes(rg *gin.RouterGroup, inventoryRepo orders.OrderRepository, authSvc auth.AuthService, emailSvc email.EmailService, redis *redis.Client, auditLog audit_logs.AuditLogService) {
+	orderSvc := orders.NewOrderService(inventoryRepo, emailSvc, redis, auditLog)
+	orderHandler := orders.NewOrderHandler(orderSvc)
+
+	orderRoute := rg.Group("/orders")
+	orderRoute.Use(middleware.AuthRequired(authSvc))
+
+	orderRoute.GET("", middleware.PermissionRequired(authSvc, "orders:view"), orderHandler.GetOrders)
+	orderRoute.GET("/:uuid", middleware.PermissionRequired(authSvc, "orders:view"), orderHandler.GetOrderByUUID)
+	orderRoute.POST("", middleware.PermissionRequired(authSvc, "orders:create"), orderHandler.CreateOrder)
+	orderRoute.PUT("/:uuid", middleware.PermissionRequired(authSvc, "orders:edit"), orderHandler.UpdateOrder)
+	orderRoute.DELETE("/:uuid", middleware.PermissionRequired(authSvc, "orders:delete"), orderHandler.DeleteOrder)
+	orderRoute.POST("/updatestatus/:uuid", middleware.PermissionRequired(authSvc, "orders:status"), orderHandler.UpdateOrderStatus)
 }
