@@ -24,12 +24,12 @@ func (r *Repository) GetOrders(ctx context.Context, q dto.BaseFilters) ([]models
 	return nil, 0, nil
 }
 
-func (r *Repository) CreateOrder(ctx context.Context, order *models.Order) (*models.Order, error) {
-	return nil, nil
+func (r *Repository) CreateOrder(ctx context.Context, order *models.Order) error {
+	return nil
 }
 
-func (r *Repository) UpdateOrder(ctx context.Context, order *models.Order) (*models.Order, error) {
-	return nil, nil
+func (r *Repository) UpdateOrder(ctx context.Context, order *models.Order) error {
+	return nil
 }
 
 func (r *Repository) DeleteOrder(ctx context.Context, uuid string) error {
