@@ -15,7 +15,7 @@ type CartRepository interface {
 }
 
 type CartService interface {
-	AddToCart(ctx context.Context, cart CartRequest, audit models.AuditLogRequest) (*models.Cart, error)
+	AddToCart(ctx context.Context, cart *CartRequest, audit models.AuditLogRequest) (*models.Cart, error)
 }
 
 type service struct {
@@ -29,16 +29,38 @@ func NewCartService(r CartRepository, email email.EmailService, redis *redis.Cli
 	return &service{r: r, email: email, redis: redis, auditLog: auditLog}
 }
 
-func (s *service) AddToCart(ctx context.Context, req CartRequest, audit models.AuditLogRequest) (*models.Cart, error) {
+func (s *service) AddToCart(ctx context.Context, req *CartRequest, audit models.AuditLogRequest) (*models.Cart, error) {
 	cart := &models.Cart{}
 
 	if len(req.CartItem) == 0 {
 		return nil, errors.New("Cannot proceed with empty cart")
 	}
 
+	if req.CustomerID != nil {
+		cart.CustomerID = *req.CustomerID
+	}
+
+	if req.CartStatus != nil {
+		cart.CartStatus = *req.CartStatus
+	}
+
 	for _, rci := range req.CartItem {
-		cart_item := &models.CartItem{
-			ProductName: *rci.ProductName,
+		cart_item := &models.CartItem{}
+
+		if rci.CartID != nil {
+			cart_item.CartID = *rci.CartID
+		}
+
+		if rci.ProductID != nil {
+			cart_item.ProductID = *rci.ProductID
+		}
+
+		if rci.ProductName != nil {
+			cart_item.ProductName = *rci.ProductName
+		}
+
+		if rci.Quantity != nil {
+			cart_item.Quantity = *rci.Quantity
 		}
 
 		cart.CartItems = append(cart.CartItems, cart_item)

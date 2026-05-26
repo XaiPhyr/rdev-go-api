@@ -7,6 +7,8 @@ type CartRequest struct {
 }
 
 type CartItemRequest struct {
+	CartID           *int64  `json:"cart_id"`
+	ProductID        *int64  `json:"product_id"`
 	ProductName      *string `json:"product_name"`
 	TransactionPrice *int64  `json:"transaction_price"`
 	Quantity         *int64  `json:"quantity"`
