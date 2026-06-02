@@ -27,7 +27,7 @@ type StockMovementTest struct {
 	UpdateStockMovementFunc       func(ctx context.Context, sm *models.StockMovement) error
 	DeleteStockMovementFunc       func(ctx context.Context, uuid string) error
 	UpdateStockMovementStatusFunc func(ctx context.Context, uuid string) error
-	ProcessBulkUploadFunc         func(ctx context.Context, row [][]string) ([]stock_movements.BulkUploadErrResponse, error)
+	ProcessBulkUploadFunc         func(ctx context.Context, row [][]string, pics [][]byte) ([]stock_movements.BulkUploadErrResponse, error)
 }
 
 func (m *StockMovementTest) GetStockMovementByUUID(ctx context.Context, uuid string) (*models.StockMovement, error) {
@@ -72,9 +72,9 @@ func (m *StockMovementTest) UpdateStockMovementStatus(ctx context.Context, uuid 
 
 	return nil
 }
-func (m *StockMovementTest) ProcessBulkUpload(ctx context.Context, row [][]string) ([]stock_movements.BulkUploadErrResponse, error) {
+func (m *StockMovementTest) ProcessBulkUpload(ctx context.Context, row [][]string, pics [][]byte) ([]stock_movements.BulkUploadErrResponse, error) {
 	if m.ProcessBulkUploadFunc != nil {
-		return m.ProcessBulkUploadFunc(ctx, row)
+		return m.ProcessBulkUploadFunc(ctx, row, pics)
 	}
 
 	return nil, nil
@@ -84,8 +84,9 @@ func TestStockMovement(t *testing.T) {
 	testStockMovementRepo := &StockMovementTest{}
 	emailSvc := mocks.NewTestEmailService()
 	_, auditLogSvc := mocks.NewTestAuditService()
+	awsSvc := mocks.NewTestAWSService()
 
-	testStockMovementSvc := stock_movements.NewStockMovementService(testStockMovementRepo, emailSvc, nil, auditLogSvc)
+	testStockMovementSvc := stock_movements.NewStockMovementService(testStockMovementRepo, emailSvc, nil, auditLogSvc, awsSvc)
 
 	t.Run("Get StockMovements", func(t *testing.T) {
 		testStockMovementRepo.GetStockMovementsFunc = func(ctx context.Context, q dto.BaseFilters) ([]models.StockMovement, int, error) {
@@ -183,7 +184,7 @@ func TestStockMovement(t *testing.T) {
 	})
 
 	t.Run("Process Bulk Upload", func(t *testing.T) {
-		testStockMovementRepo.ProcessBulkUploadFunc = func(ctx context.Context, rows [][]string) ([]stock_movements.BulkUploadErrResponse, error) {
+		testStockMovementRepo.ProcessBulkUploadFunc = func(ctx context.Context, rows [][]string, pics [][]byte) ([]stock_movements.BulkUploadErrResponse, error) {
 			excelSKUs := make([]string, len(rows)-1)
 			excelProductNames := make([]string, len(rows)-1)
 			skuMap := make(map[string]int64)
@@ -197,7 +198,7 @@ func TestStockMovement(t *testing.T) {
 			invalidProducts := make(map[int]string)
 
 			for i, r := range rows {
-				if i == 0 && len(r) < 8 {
+				if i == 0 && len(r) < 9 {
 					continue
 				}
 
@@ -211,12 +212,17 @@ func TestStockMovement(t *testing.T) {
 			}
 
 			for i, r := range rows {
-				if i == 0 && len(r) < 8 {
+				if i == 0 && len(r) < 9 {
 					continue
 				}
 
 				sku := r[0]
 				name := r[1]
+
+				if len(r) == 8 {
+					img := r[7]
+					fmt.Println("IMG: ", img)
+				}
 
 				_, skuExists := skuMap[sku]
 				_, nameExists := nameMap[name]
@@ -227,9 +233,6 @@ func TestStockMovement(t *testing.T) {
 
 				validProducts = append(validProducts, models.Product{Name: helpers.CleanSpecialChars(name), SKU: helpers.CleanSpecialChars(sku)})
 			}
-
-			t.Log("INVALID PRODUCTS: ", invalidProducts)
-			t.Log("VALID PRODUCTS: ", validProducts)
 
 			return nil, nil
 		}

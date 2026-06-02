@@ -91,7 +91,7 @@ func (r *Repository) UpdateStockMovementStatus(ctx context.Context, uuid string)
 	return err
 }
 
-func (r *Repository) ProcessBulkUpload(ctx context.Context, rows [][]string) ([]BulkUploadErrResponse, error) {
+func (r *Repository) ProcessBulkUpload(ctx context.Context, rows [][]string, pics [][]byte) ([]BulkUploadErrResponse, error) {
 	// Bulk upload for products using excelize
 	// BATCH INSERT instead of single line
 	// Stage 1: []Product insert on conflict sku update RETURNING id
@@ -155,7 +155,7 @@ func (r *Repository) ProcessBulkUpload(ctx context.Context, rows [][]string) ([]
 		}
 
 		for i, r := range rows {
-			if i == 0 && len(r) < 8 {
+			if i == 0 && len(r) < 9 {
 				continue
 			}
 
@@ -182,7 +182,7 @@ func (r *Repository) ProcessBulkUpload(ctx context.Context, rows [][]string) ([]
 		}
 
 		for i, r := range rows {
-			if i == 0 && len(r) < 8 {
+			if i == 0 && len(r) < 9 {
 				continue
 			}
 
@@ -194,6 +194,12 @@ func (r *Repository) ProcessBulkUpload(ctx context.Context, rows [][]string) ([]
 
 			sku := r[0]
 			name := r[1]
+			image := ""
+
+			if len(r) == 8 {
+				image = r[7]
+			}
+
 			data := excelData{
 				name:        name,
 				slug:        r[2],
@@ -220,6 +226,7 @@ func (r *Repository) ProcessBulkUpload(ctx context.Context, rows [][]string) ([]
 				Price:       data.price,
 				Barcode:     data.barcode,
 				CategoryID:  categoryID,
+				Image:       image,
 			}
 
 			validProducts = append(validProducts, item)

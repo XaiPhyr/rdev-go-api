@@ -8,8 +8,10 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/XaiPhyr/rdev-go-api/internal/audit_logs"
+	"github.com/XaiPhyr/rdev-go-api/internal/shared/aws"
 	"github.com/XaiPhyr/rdev-go-api/internal/shared/dto"
 	"github.com/XaiPhyr/rdev-go-api/internal/shared/email"
 	"github.com/XaiPhyr/rdev-go-api/internal/shared/models"
@@ -25,7 +27,7 @@ type StockMovementRepository interface {
 	UpdateStockMovement(ctx context.Context, sm *models.StockMovement) error
 	DeleteStockMovement(ctx context.Context, uuid string) error
 	UpdateStockMovementStatus(ctx context.Context, uuid string) error
-	ProcessBulkUpload(ctx context.Context, row [][]string) ([]BulkUploadErrResponse, error)
+	ProcessBulkUpload(ctx context.Context, row [][]string, pics [][]byte) ([]BulkUploadErrResponse, error)
 }
 
 type StockMovementService interface {
@@ -44,10 +46,11 @@ type service struct {
 	es       email.EmailService
 	redis    *redis.Client
 	auditLog audit_logs.AuditLogService
+	aws      aws.AWSService
 }
 
-func NewStockMovementService(r StockMovementRepository, es email.EmailService, redis *redis.Client, auditLog audit_logs.AuditLogService) *service {
-	return &service{r: r, es: es, redis: redis, auditLog: auditLog}
+func NewStockMovementService(r StockMovementRepository, es email.EmailService, redis *redis.Client, auditLog audit_logs.AuditLogService, aws aws.AWSService) *service {
+	return &service{r: r, es: es, redis: redis, auditLog: auditLog, aws: aws}
 }
 
 func (s *service) GetStockMovementByUUID(ctx context.Context, uuid string) (*models.StockMovement, error) {
@@ -198,7 +201,42 @@ func (s *service) ProcessBulkUpload(ctx context.Context, r io.Reader, audit mode
 		return nil, fmt.Errorf("could not open sheet: %w", err)
 	}
 
-	invalidProducts, err := s.r.ProcessBulkUpload(ctx, rows)
+	picCells, err := f.GetPictureCells("Sheet1")
+	if err != nil {
+		return nil, nil
+	}
+
+	for i, cell := range picCells {
+		pics, err := f.GetPictures("Sheet1", cell)
+		if err != nil {
+			return nil, nil
+		}
+
+		if len(pics) == 0 {
+			continue
+		}
+
+		imgBytes := pics[0].File
+		extension := pics[0].Extension
+		uniqueFilename := fmt.Sprintf("products/%s-%d%s", cell, time.Now().UnixNano(), extension)
+
+		// Use this for local saving if needed, but ideally should directly upload to S3 without saving locally to optimize storage and performance
+		// err = helpers.SaveImage("./files/products", filepath.Join("./files/", uniqueFilename), imgBytes)
+		// if err != nil {
+		// 	return nil, fmt.Errorf("failed to save image locally: %w", err)
+		// }
+
+		// What: UploadToS3 - invalid memory address
+		// Work-around: while using test.go file for this function, the aws service is not properly initialized with the mock
+		// Conclusion: need to properly mock the AWS service on mocks/aws.go file and use that in the test file instead of the real AWS service to address the nil pointer issue
+		publicURL, err := s.aws.UploadToS3(ctx, uniqueFilename, imgBytes)
+		if err != nil {
+			return nil, fmt.Errorf("failed to upload image to S3: %w", err)
+		}
+		rows[i+1][7] = publicURL
+	}
+
+	invalidProducts, err := s.r.ProcessBulkUpload(ctx, rows, nil)
 
 	return invalidProducts, err
 }

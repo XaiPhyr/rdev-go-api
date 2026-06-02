@@ -1,10 +1,10 @@
 package helpers
 
 import (
+	"fmt"
 	"log/slog"
 	"os"
 	"regexp"
-	"testing"
 
 	"github.com/XaiPhyr/rdev-go-api/internal/shared/models"
 	"github.com/gin-gonic/gin"
@@ -51,12 +51,23 @@ func CleanSpecialChars(s string) string {
 	return string(clean)
 }
 
-func CheckUUID(t testing.TB, uuid string) string {
-	t.Helper()
-
-	if uuid == "" {
-		t.Error("Expected UUID to be provided")
+func SaveImage(path, file string, data []byte) error {
+	if _, err := os.Stat(path); os.IsNotExist(err) {
+		err := os.Mkdir(path, 0755)
+		if err != nil {
+			return fmt.Errorf("could not create directory: %w", err)
+		}
 	}
 
-	return uuid
+	f, err := os.Create(file)
+	if err != nil {
+		return fmt.Errorf("failed to create file: %w", err)
+	}
+	defer f.Close()
+
+	if _, err := f.Write(data); err != nil {
+		return fmt.Errorf("failed to write file: %w", err)
+	}
+
+	return nil
 }
