@@ -11,6 +11,7 @@ type (
 		Server       ServerConfig `yaml:"server"`
 		Database     DBConfig     `yaml:"database"`
 		SMTP         SMTPConfig   `yaml:"smtp"`
+		AWS          AWSConfig    `yaml:"aws"`
 		Redis        string       `yaml:"redis"`
 		JWTSecretKey string       `yaml:"jwt_secret_key"`
 	}
@@ -30,6 +31,11 @@ type (
 		Host string `yaml:"host"`
 		Port string `yaml:"port"`
 		From string `yaml:"from"`
+	}
+
+	AWSConfig struct {
+		Region string `yaml:"region"`
+		Bucket string `yaml:"bucket"`
 	}
 )
 

@@ -15,3 +15,7 @@ smtp:
   from: "no-reply@rdev.local"
 
 jwt_secret_key: "secret_key"
+
+aws:
+  region: "us-east-1"
+  bucket: "your-bucket"

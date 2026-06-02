@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/XaiPhyr/rdev-go-api/internal/audit_logs"
 	"github.com/XaiPhyr/rdev-go-api/internal/auth"
@@ -11,6 +12,7 @@ import (
 	"github.com/XaiPhyr/rdev-go-api/internal/middleware"
 	"github.com/XaiPhyr/rdev-go-api/internal/orders"
 	"github.com/XaiPhyr/rdev-go-api/internal/products"
+	"github.com/XaiPhyr/rdev-go-api/internal/shared/aws"
 	"github.com/XaiPhyr/rdev-go-api/internal/shared/email"
 	"github.com/XaiPhyr/rdev-go-api/internal/stock_movements"
 	"github.com/XaiPhyr/rdev-go-api/internal/users"
@@ -26,6 +28,10 @@ import (
 // Never let "data" import "service" or "server".
 func Container(r *gin.Engine, db *bun.DB, redis *redis.Client, cfg *config.Config) {
 	emailSvc := email.NewEmailService(cfg.SMTP.Host, cfg.SMTP.Port, cfg.SMTP.From)
+	awsSvc, err := aws.NewAWSService(cfg.AWS.Region, cfg.AWS.Bucket)
+	if err != nil {
+		fmt.Println("failed to initialize AWS service:", err)
+	}
 
 	auditLogRepo := audit_logs.NewAuditLogRepository(db)
 	auditLogSvc := audit_logs.NewAuditLogService(auditLogRepo)
@@ -46,7 +52,7 @@ func Container(r *gin.Engine, db *bun.DB, redis *redis.Client, cfg *config.Confi
 	setupCategoryRoutes(apiVersion, categoryRepo, authSvc, emailSvc, redis, auditLogSvc)
 	setupProductRoutes(apiVersion, productRepo, authSvc, emailSvc, redis, auditLogSvc)
 	setupInventoryRoutes(apiVersion, inventoryRepo, authSvc, emailSvc, redis, auditLogSvc)
-	setupStockMovementRoutes(apiVersion, stockMovementRepo, authSvc, emailSvc, redis, auditLogSvc)
+	setupStockMovementRoutes(apiVersion, stockMovementRepo, authSvc, emailSvc, redis, auditLogSvc, awsSvc)
 	setupOrderRoutes(apiVersion, orderRepo, authSvc, emailSvc, redis, auditLogSvc)
 }
 
@@ -120,8 +126,8 @@ func setupInventoryRoutes(rg *gin.RouterGroup, inventoryRepo inventories.Invento
 	inventoryRoute.POST("/updatestatus/:uuid", middleware.PermissionRequired(authSvc, "inventories:status"), inventoryHandler.UpdateInventoryStatus)
 }
 
-func setupStockMovementRoutes(rg *gin.RouterGroup, stockMovementRepo stock_movements.StockMovementRepository, authSvc auth.AuthService, emailSvc email.EmailService, redis *redis.Client, auditLog audit_logs.AuditLogService) {
-	stockMovementSvc := stock_movements.NewStockMovementService(stockMovementRepo, emailSvc, redis, auditLog)
+func setupStockMovementRoutes(rg *gin.RouterGroup, stockMovementRepo stock_movements.StockMovementRepository, authSvc auth.AuthService, emailSvc email.EmailService, redis *redis.Client, auditLog audit_logs.AuditLogService, aws aws.AWSService) {
+	stockMovementSvc := stock_movements.NewStockMovementService(stockMovementRepo, emailSvc, redis, auditLog, aws)
 	stockMovementHandler := stock_movements.NewStockMovementHandler(stockMovementSvc)
 
 	stockMovementRoute := rg.Group("/stock_movements")
