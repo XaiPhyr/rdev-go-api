@@ -146,7 +146,11 @@ func (h *Handler) ProcessBulkUpload(ctx *gin.Context) {
 		helpers.ResponseErr(ctx, http.StatusBadRequest, err.Error())
 		return
 	}
-	defer fileStream.Close()
+	defer func() {
+		if cerr := fileStream.Close(); cerr != nil {
+			helpers.ResponseErr(ctx, http.StatusInternalServerError, "failed to close file")
+		}
+	}()
 
 	invalidProducts, err := h.svc.ProcessBulkUpload(ctx.Request.Context(), fileStream, helpers.ParseAuditLog(ctx))
 	if err != nil {

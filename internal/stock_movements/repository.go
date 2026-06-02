@@ -108,7 +108,6 @@ func (r *Repository) ProcessBulkUpload(ctx context.Context, rows [][]string, pic
 	err := r.db.RunInTx(ctx, nil, func(ctx context.Context, tx bun.Tx) error {
 		var categories []models.Category
 		type excelData struct {
-			sku         string
 			name        string
 			slug        string
 			price       int64

@@ -44,7 +44,7 @@ func NewOrderService(r OrderRepository, email email.EmailService, redis *redis.C
 
 func (s *service) GetOrderByUUID(ctx context.Context, uuid string) (*models.Order, error) {
 	if uuid == "" || len(uuid) != 36 {
-		return nil, errors.New("Invalid UUID format")
+		return nil, errors.New("invalid UUID format")
 	}
 
 	order, err := s.r.GetOrderByUUID(ctx, uuid)
@@ -53,10 +53,10 @@ func (s *service) GetOrderByUUID(ctx context.Context, uuid string) (*models.Orde
 	}
 
 	if order.OrderNumber == "" {
-		return nil, errors.New("Order must have a valid order number")
+		return nil, errors.New("order must have a valid order number")
 	}
 	if len(order.OrderNumber) > 25 {
-		return nil, errors.New("Order number exceeds maximum length of 25 characters")
+		return nil, errors.New("order number exceeds maximum length of 25 characters")
 	}
 
 	return order, nil
@@ -104,19 +104,19 @@ func (s *service) CreateOrder(ctx context.Context, req OrderRequest, audit model
 	}
 
 	if order.TotalAmount == 0 {
-		return errors.New("Order must have total amount")
+		return errors.New("order must have total amount")
 	}
 
 	if len(order.OrderItem) == 0 {
-		return errors.New("Order must have order items")
+		return errors.New("order must have order items")
 	}
 
 	for _, oi := range order.OrderItem {
 		if oi.ProductID == 0 || oi.TransactionPrice == 0 || oi.Quantity == 0 {
-			return errors.New("Order ID/Product ID/Transaction Price/Quantity must not be 0")
+			return errors.New("order ID/Product ID/Transaction Price/Quantity must not be 0")
 		}
 		if oi.Quantity < 0 {
-			return errors.New("Quantity must not be negative")
+			return errors.New("quantity must not be negative")
 		}
 	}
 
@@ -132,16 +132,16 @@ func (s *service) CreateOrder(ctx context.Context, req OrderRequest, audit model
 
 func (s *service) UpdateOrder(ctx context.Context, uuid string, req OrderRequest, audit models.AuditLogRequest) error {
 	if uuid == "" || len(uuid) != 36 {
-		return errors.New("Invalid UUID format")
+		return errors.New("invalid UUID format")
 	}
 
 	if req.CustomerID == nil {
-		return errors.New("Must have customer id")
+		return errors.New("must have customer id")
 	}
 
 	order, err := s.r.GetOrderByUUID(ctx, uuid)
 	if err != nil {
-		return errors.New("Order not found")
+		return errors.New("order not found")
 	}
 
 	if req.OrderStatus != nil {
@@ -155,7 +155,7 @@ func (s *service) UpdateOrder(ctx context.Context, uuid string, req OrderRequest
 
 func (s *service) DeleteOrder(ctx context.Context, uuid string, audit models.AuditLogRequest) error {
 	if uuid == "" || len(uuid) != 36 {
-		return errors.New("Invalid UUID format")
+		return errors.New("invalid UUID format")
 	}
 
 	return s.r.DeleteOrder(ctx, uuid)
@@ -163,7 +163,7 @@ func (s *service) DeleteOrder(ctx context.Context, uuid string, audit models.Aud
 
 func (s *service) UpdateOrderStatus(ctx context.Context, uuid string, audit models.AuditLogRequest) error {
 	if uuid == "" || len(uuid) != 36 {
-		return errors.New("Invalid UUID format")
+		return errors.New("invalid UUID format")
 	}
 
 	return s.r.UpdateOrderStatus(ctx, uuid)

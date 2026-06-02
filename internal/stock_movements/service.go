@@ -171,15 +171,28 @@ func (s *service) BulkUpload(ctx context.Context, fileHeader *multipart.FileHead
 	if err != nil {
 		return fmt.Errorf("could not open file: %w", err)
 	}
-	defer source.Close()
+	defer func() {
+		if cerr := source.Close(); cerr != nil {
+			err = fmt.Errorf("failed to close file: %w", err)
+		}
+	}()
 
 	// should save filename as unique id
+	root, err := os.OpenRoot(".")
+	if err != nil {
+		return fmt.Errorf("failed to open folder: %w", err)
+	}
+
 	path := filepath.Join("./files/", filepath.Base(fileHeader.Filename))
-	destination, err := os.Create(path)
+	destination, err := root.Create(path)
 	if err != nil {
 		return fmt.Errorf("could not save file: %w", err)
 	}
-	defer destination.Close()
+	defer func() {
+		if cerr := destination.Close(); cerr != nil {
+			err = fmt.Errorf("failed to close file: %w", err)
+		}
+	}()
 
 	if _, err := io.Copy(destination, source); err != nil {
 		return fmt.Errorf("failed to save file: %w", err)
@@ -195,7 +208,11 @@ func (s *service) ProcessBulkUpload(ctx context.Context, r io.Reader, audit mode
 	if err != nil {
 		return nil, fmt.Errorf("could not open file: %w", err)
 	}
-	defer f.Close()
+	defer func() {
+		if cerr := f.Close(); cerr != nil {
+			err = fmt.Errorf("failed to close file: %w", err)
+		}
+	}()
 
 	rows, err := f.GetRows("Sheet1")
 	if err != nil {

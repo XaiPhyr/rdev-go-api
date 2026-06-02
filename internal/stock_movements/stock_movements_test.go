@@ -234,6 +234,9 @@ func TestStockMovement(t *testing.T) {
 				validProducts = append(validProducts, models.Product{Name: helpers.CleanSpecialChars(name), SKU: helpers.CleanSpecialChars(sku)})
 			}
 
+			t.Log("Invalid Products: ", invalidProducts)
+			t.Log("Valid Products: ", validProducts)
+
 			return nil, nil
 		}
 

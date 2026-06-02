@@ -51,6 +51,9 @@ func (s *service) Login(ctx context.Context, username, password string) (string,
 
 func (s *service) Register(ctx context.Context, req RegisterRequest) error {
 	passwordHash, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
+	if err != nil {
+		return fmt.Errorf("failed to encrypt password: %w", err)
+	}
 
 	user := &users.User{
 		FirstName: req.FirstName,
