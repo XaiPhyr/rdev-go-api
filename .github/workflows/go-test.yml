@@ -1,9 +1,11 @@
 name: Go Test Pipeline
 
-# Trigger the workflow on every push to the main branch
 on:
   push:
-    branches: [ "main" ]
+    branches: ["main"]
+    paths-ignore:
+      - "README.md"
+      - "**.md"
 
 jobs:
   test:
