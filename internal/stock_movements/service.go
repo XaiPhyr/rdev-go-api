@@ -157,7 +157,7 @@ func (s *service) BulkUpload(ctx context.Context, fileHeader *multipart.FileHead
 
 	ext := filepath.Ext(fileHeader.Filename)
 	if ext != ".xlsx" {
-		return fmt.Errorf("could not proccess file format: %s", ext)
+		return fmt.Errorf("could not process file format: %s", ext)
 	}
 
 	if _, err := os.Stat("./files/"); os.IsNotExist(err) {

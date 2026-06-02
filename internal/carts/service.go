@@ -33,7 +33,7 @@ func (s *service) AddToCart(ctx context.Context, req *CartRequest, audit models.
 	cart := &models.Cart{}
 
 	if len(req.CartItem) == 0 {
-		return nil, errors.New("Cannot proceed with empty cart")
+		return nil, errors.New("cannot proceed with empty cart")
 	}
 
 	if req.CustomerID != nil {

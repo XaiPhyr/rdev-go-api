@@ -122,7 +122,7 @@ func (s *service) CreateOrder(ctx context.Context, req OrderRequest, audit model
 
 	err := helpers.ValidateStruct(order)
 	if err != nil {
-		return fmt.Errorf("Validation error check field %v", err)
+		return fmt.Errorf("validation error check field %v", err)
 	}
 
 	err = s.r.CreateOrder(ctx, order)

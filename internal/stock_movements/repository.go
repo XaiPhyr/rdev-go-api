@@ -170,7 +170,7 @@ func (r *Repository) ProcessBulkUpload(ctx context.Context, rows [][]string, pic
 			}).Scan(ctx)
 
 		if err != nil {
-			return fmt.Errorf("Cannot fetch products %v", err)
+			return fmt.Errorf("cannot fetch products %v", err)
 		}
 
 		if len(existingProducts) > 0 {

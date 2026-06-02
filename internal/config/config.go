@@ -53,7 +53,11 @@ func LoadConfig(configPath string) (*Config, error) {
 		return nil, err
 	}
 
-	defer f.Close()
+	defer func() {
+		if cerr := f.Close(); cerr != nil {
+			err = fmt.Errorf("failed to close file: %w", err)
+		}
+	}()
 
 	d := yaml.NewDecoder(f)
 	if err := d.Decode(config); err != nil {

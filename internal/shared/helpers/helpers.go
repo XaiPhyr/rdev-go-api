@@ -68,7 +68,11 @@ func SaveImage(path, file string, data []byte) error {
 	if err != nil {
 		return fmt.Errorf("failed to create file: %w", err)
 	}
-	defer f.Close()
+	defer func() {
+		if cerr := f.Close(); cerr != nil {
+			err = fmt.Errorf("failed to close file: %w", err)
+		}
+	}()
 
 	if _, err := f.Write(data); err != nil {
 		return fmt.Errorf("failed to write file: %w", err)
