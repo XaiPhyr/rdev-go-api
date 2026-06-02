@@ -14,6 +14,7 @@ import (
 	"github.com/XaiPhyr/rdev-go-api/internal/shared/aws"
 	"github.com/XaiPhyr/rdev-go-api/internal/shared/dto"
 	"github.com/XaiPhyr/rdev-go-api/internal/shared/email"
+	"github.com/XaiPhyr/rdev-go-api/internal/shared/helpers"
 	"github.com/XaiPhyr/rdev-go-api/internal/shared/models"
 	"github.com/xuri/excelize/v2"
 
@@ -160,7 +161,7 @@ func (s *service) BulkUpload(ctx context.Context, fileHeader *multipart.FileHead
 	}
 
 	if _, err := os.Stat("./files/"); os.IsNotExist(err) {
-		err := os.Mkdir("./files/", 0755)
+		err := os.Mkdir("./files/", 0750)
 		if err != nil {
 			return fmt.Errorf("could not create directory: %w", err)
 		}
@@ -221,10 +222,10 @@ func (s *service) ProcessBulkUpload(ctx context.Context, r io.Reader, audit mode
 		uniqueFilename := fmt.Sprintf("products/%s-%d%s", cell, time.Now().UnixNano(), extension)
 
 		// Use this for local saving if needed, but ideally should directly upload to S3 without saving locally to optimize storage and performance
-		// err = helpers.SaveImage("./files/products", filepath.Join("./files/", uniqueFilename), imgBytes)
-		// if err != nil {
-		// 	return nil, fmt.Errorf("failed to save image locally: %w", err)
-		// }
+		err = helpers.SaveImage("./files/products", filepath.Join("./files/", uniqueFilename), imgBytes)
+		if err != nil {
+			return nil, fmt.Errorf("failed to save image locally: %w", err)
+		}
 
 		// What: UploadToS3 - invalid memory address
 		// Work-around: while using test.go file for this function, the aws service is not properly initialized with the mock

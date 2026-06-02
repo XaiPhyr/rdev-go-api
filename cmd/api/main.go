@@ -38,5 +38,7 @@ func main() {
 	redis := config.ConnectRedis(cfg.Redis)
 	server.Container(router, db, redis, cfg)
 
-	router.Run(cfg.Server.Port)
+	if err := router.Run(cfg.Server.Port); err != nil {
+		log.Fatalf("failed to run server: %v", err)
+	}
 }

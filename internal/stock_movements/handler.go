@@ -134,8 +134,14 @@ func (h *Handler) ProcessBulkUpload(ctx *gin.Context) {
 		return
 	}
 
+	root, err := os.OpenRoot(".")
+	if err != nil {
+		helpers.ResponseErr(ctx, http.StatusBadRequest, "internal server error")
+		return
+	}
+
 	filePath := filepath.Join("./files/", filepath.Base(req.File))
-	fileStream, err := os.Open(filePath)
+	fileStream, err := root.Open(filePath)
 	if err != nil {
 		helpers.ResponseErr(ctx, http.StatusBadRequest, err.Error())
 		return

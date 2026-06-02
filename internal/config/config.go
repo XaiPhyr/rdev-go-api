@@ -1,6 +1,7 @@
 package config
 
 import (
+	"fmt"
 	"os"
 
 	"gopkg.in/yaml.v3"
@@ -42,7 +43,12 @@ type (
 func LoadConfig(configPath string) (*Config, error) {
 	config := &Config{}
 
-	f, err := os.Open(configPath)
+	root, err := os.OpenRoot(".")
+	if err != nil {
+		return nil, fmt.Errorf("failed to open config: %w", err)
+	}
+
+	f, err := root.Open(configPath)
 	if err != nil {
 		return nil, err
 	}

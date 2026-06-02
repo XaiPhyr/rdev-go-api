@@ -53,13 +53,18 @@ func CleanSpecialChars(s string) string {
 
 func SaveImage(path, file string, data []byte) error {
 	if _, err := os.Stat(path); os.IsNotExist(err) {
-		err := os.Mkdir(path, 0755)
+		err := os.Mkdir(path, 0750)
 		if err != nil {
 			return fmt.Errorf("could not create directory: %w", err)
 		}
 	}
 
-	f, err := os.Create(file)
+	root, err := os.OpenRoot(".")
+	if err != nil {
+		return fmt.Errorf("failed to open folder: %w", err)
+	}
+
+	f, err := root.Create(file)
 	if err != nil {
 		return fmt.Errorf("failed to create file: %w", err)
 	}
