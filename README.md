@@ -1,5 +1,12 @@
 # Go Backend Engine
 
+[![Go Report Card](https://goreportcard.com/badge/github.com/XaiPhyr/rdev-go-api)](https://goreportcard.com/report/github.com/XaiPhyr/rdev-go-api)
+[![GitHub release (latest by SemVer)](https://img.shields.io/github/v/release/XaiPhyr/rdev-go-api?logo=github&color=blue)](https://github.com/XaiPhyr/rdev-go-api/releases)
+[![Build Status](https://github.com/XaiPhyr/rdev-go-api/actions/workflows/go-test.yml/badge.svg)](https://github.com/XaiPhyr/rdev-go-api/actions)
+[![Build Status](https://github.com/XaiPhyr/rdev-go-api/actions/workflows/go-sec.yml/badge.svg)](https://github.com/XaiPhyr/rdev-go-api/actions)
+[![Build Status](https://github.com/XaiPhyr/rdev-go-api/actions/workflows/go-lint.yml/badge.svg)](https://github.com/XaiPhyr/rdev-go-api/actions)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 A high-performance, containerized REST API built with **Golang 1.26**. This project implements a robust backend architecture focused on security, system performance, and automated deployment workflows.
 
 ## 🚀 Technical Highlights
@@ -36,6 +43,7 @@ The environment is configured to bridge the containerized API with your local da
    The API will be accessible at `http://localhost:8200/api/v1`.
 
 ## 📂 Folder structure
+
 ```text
 .
 ├── cmd/
@@ -67,16 +75,17 @@ The environment is configured to bridge the containerized API with your local da
 
 ## Package Dependency & Data Flow
 
-In this domain-driven architecture, components within the same folder (e.g., `handler.go`, `service.go`, `repository.go`) belong to the same Go package. They reference each other's types directly without Go `import` statements. 
+In this domain-driven architecture, components within the same folder (e.g., `handler.go`, `service.go`, `repository.go`) belong to the same Go package. They reference each other's types directly without Go `import` statements.
 
 ### Data Flow Matrix
 
-| Component | Can Access Local Types? (`types.go`) | Can Import `shared/dto`? | Can Call Other Domains? |
-| :--- | :--- | :--- | :--- |
-| **Handler** | Yes (Requests/Responses) | Yes (Global Queries) | No (Routes through its own Service) |
-| **Service** | Yes (Core business entities) | Yes (Unpacks Global Queries) | Only via **Interfaces** (to avoid cycles) |
-| **Repository**| Yes (Database models/mappings) | No | No (Strictly handles its own domain DB) |
+| Component      | Can Access Local Types? (`types.go`) | Can Import `shared/dto`?     | Can Call Other Domains?                   |
+| :------------- | :----------------------------------- | :--------------------------- | :---------------------------------------- |
+| **Handler**    | Yes (Requests/Responses)             | Yes (Global Queries)         | No (Routes through its own Service)       |
+| **Service**    | Yes (Core business entities)         | Yes (Unpacks Global Queries) | Only via **Interfaces** (to avoid cycles) |
+| **Repository** | Yes (Database models/mappings)       | No                           | No (Strictly handles its own domain DB)   |
 
 ### Key Rules for Domain Isolation:
+
 1. **No Direct Cross-Imports:** `internal/orders` must never directly import `internal/users`. If the orders domain needs user data, it must define a local interface that the user service satisfies, or data must be aggregated at the handler/orchestration level.
 2. **Database Purity:** Repositories only talk to the database driver/pool (`internal/db`) and map data to local types. They remain completely blind to HTTP requests, global DTOs, or other feature domains.
