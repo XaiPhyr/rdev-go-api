@@ -20,6 +20,7 @@ type Product struct {
 	Price         int64            `bun:"price,notnull" json:"price"`
 	CostPrice     int64            `bun:"cost_price,notnull" json:"cost_price"`
 	DisplayPrice  float64          `bun:"column:display_price,scanonly" json:"display_price"`
+	Image         string           `bun:"image" json:"image"`
 	Inventory     *Inventory       `bun:"rel:has-one,join:id=product_id" json:"inventory,omitempty"`
 	StockMovement []*StockMovement `bun:"rel:has-many,join:id=product_id" json:"stock_movement,omitempty"`
 }
