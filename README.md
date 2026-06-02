@@ -1,11 +1,11 @@
 # Go Backend Engine
 
-[![Go Report Card](https://goreportcard.com/badge/github.com/XaiPhyr/rdev-go-api)](https://goreportcard.com/report/github.com/XaiPhyr/rdev-go-api)
-[![GitHub release (latest by SemVer)](https://img.shields.io/github/v/release/XaiPhyr/rdev-go-api?logo=github&color=blue)](https://github.com/XaiPhyr/rdev-go-api/releases)
-[![Build Status](https://github.com/XaiPhyr/rdev-go-api/actions/workflows/go-test.yml/badge.svg)](https://github.com/XaiPhyr/rdev-go-api/actions)
-[![Build Status](https://github.com/XaiPhyr/rdev-go-api/actions/workflows/go-sec.yml/badge.svg)](https://github.com/XaiPhyr/rdev-go-api/actions)
-[![Build Status](https://github.com/XaiPhyr/rdev-go-api/actions/workflows/go-lint.yml/badge.svg)](https://github.com/XaiPhyr/rdev-go-api/actions)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Go Report Card](https://goreportcard.com/badge/github.com/XaiPhyr/rdev-go-api?style=flat)](https://goreportcard.com/report/github.com/XaiPhyr/rdev-go-api)
+[![Build Status](https://img.shields.io/github/actions/workflow/status/XaiPhyr/rdev-go-api/go-test.yml?label=test&logo=github&logoColor=white&style=flat)](https://github.com/XaiPhyr/rdev-go-api/actions)
+[![Build Status](https://img.shields.io/github/actions/workflow/status/XaiPhyr/rdev-go-api/go-sec.yml?label=security&logo=github&logoColor=white&style=flat)](https://github.com/XaiPhyr/rdev-go-api/actions)
+[![Build Status](https://img.shields.io/github/actions/workflow/status/XaiPhyr/rdev-go-api/go-lint.yml?label=lint&logo=github&logoColor=white&style=flat)](https://github.com/XaiPhyr/rdev-go-api/actions)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat)](https://opensource.org/licenses/MIT)
+[![LinkedIn](https://img.shields.io/badge/LinkedIn-0A66C2?style=flat&logo=linkedin&logoColor=white)](https://linkedin.com/in/r-lozada)
 
 A high-performance, containerized REST API built with **Golang 1.26**. This project implements a robust backend architecture focused on security, system performance, and automated deployment workflows.
 
