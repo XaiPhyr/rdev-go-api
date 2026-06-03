@@ -4,6 +4,7 @@
 [![Build Status](https://img.shields.io/github/actions/workflow/status/XaiPhyr/rdev-go-api/go-test.yml?label=test&logo=github&logoColor=white&style=flat)](https://github.com/XaiPhyr/rdev-go-api/actions)
 [![Build Status](https://img.shields.io/github/actions/workflow/status/XaiPhyr/rdev-go-api/go-sec.yml?label=security&logo=github&logoColor=white&style=flat)](https://github.com/XaiPhyr/rdev-go-api/actions)
 [![Build Status](https://img.shields.io/github/actions/workflow/status/XaiPhyr/rdev-go-api/go-lint.yml?label=lint&logo=github&logoColor=white&style=flat)](https://github.com/XaiPhyr/rdev-go-api/actions)
+[![Build Status](https://img.shields.io/github/actions/workflow/status/XaiPhyr/rdev-go-api/go-cyclo.yml?label=cyclo&logo=github&logoColor=white&style=flat)](https://github.com/XaiPhyr/rdev-go-api/actions)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat)](https://opensource.org/licenses/MIT)
 [![LinkedIn](https://img.shields.io/badge/LinkedIn-0A66C2?style=flat&logo=linkedin&logoColor=white)](https://linkedin.com/in/r-lozada)
 
