@@ -13,15 +13,10 @@ import (
 )
 
 func main() {
-	ctx := context.Background()
-
 	cfg, err := config.LoadConfig("config.yaml")
 	if err != nil {
 		log.Fatal(err)
 	}
-
-	connDB := config.ConnectDB(cfg.Database)
-	migrator := migrate.NewMigrator(connDB, db.Migrations)
 
 	args := os.Args
 	if len(args) < 2 {
@@ -30,6 +25,19 @@ func main() {
 	}
 
 	cmd := args[1]
+
+	if err := CheckArgs(cmd, cfg.Database); err != nil {
+		log.Fatalf("Migration failed: %v", err)
+	}
+}
+
+func CheckArgs(cmd string, dbConfig config.DBConfig) error {
+	var err error
+	ctx := context.Background()
+
+	connDB := config.ConnectDB(dbConfig)
+	migrator := migrate.NewMigrator(connDB, db.Migrations)
+
 	switch strings.ToLower(cmd) {
 	case "init":
 		err = migrator.Init(ctx)
@@ -50,7 +58,5 @@ func main() {
 		}
 	}
 
-	if err != nil {
-		log.Fatalf("Migration failed: %v", err)
-	}
+	return err
 }
