@@ -174,7 +174,7 @@ func (r *Repository) ProcessBulkUpload(ctx context.Context, rows [][]string, pic
 			return err
 		}
 
-		return nil
+		return err
 	})
 
 	return invalidProducts, err
