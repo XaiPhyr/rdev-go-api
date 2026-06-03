@@ -2,7 +2,6 @@ package stock_movements
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"log"
 	"strconv"
@@ -123,10 +122,6 @@ func (r *Repository) ProcessBulkUpload(ctx context.Context, rows [][]string, pic
 	nameMapExists := make(map[string]string)
 	categoryMap := make(map[string]int64)
 
-	if len(rows) <= 1 {
-		return nil, errors.New("failed to load rows")
-	}
-
 	err := r.db.RunInTx(ctx, nil, func(ctx context.Context, tx bun.Tx) error {
 		err := tx.NewSelect().Model(&categories).Scan(ctx)
 		if err != nil {
@@ -150,6 +145,9 @@ func (r *Repository) ProcessBulkUpload(ctx context.Context, rows [][]string, pic
 		}
 
 		validProducts, invalidProducts, err = validateProducts(rows, skuMap, categoryMap, skuMapExists, nameMapExists)
+		if err != nil {
+			return err
+		}
 
 		_, err = tx.NewInsert().
 			Model(&validProducts).
@@ -174,7 +172,7 @@ func (r *Repository) ProcessBulkUpload(ctx context.Context, rows [][]string, pic
 			return err
 		}
 
-		return err
+		return nil
 	})
 
 	return invalidProducts, err
