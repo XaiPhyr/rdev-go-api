@@ -80,13 +80,17 @@ func (m *StockMovementTest) ProcessBulkUpload(ctx context.Context, row [][]strin
 	return nil, nil
 }
 
-func TestStockMovement(t *testing.T) {
-	testStockMovementRepo := &StockMovementTest{}
+func NewTestStockMovement(testStockMovementRepo *StockMovementTest) stock_movements.StockMovementService {
 	emailSvc := mocks.NewTestEmailService()
 	_, auditLogSvc := mocks.NewTestAuditService()
 	awsSvc := mocks.NewTestAWSService()
 
-	testStockMovementSvc := stock_movements.NewStockMovementService(testStockMovementRepo, emailSvc, nil, auditLogSvc, awsSvc)
+	return stock_movements.NewStockMovementService(testStockMovementRepo, emailSvc, nil, auditLogSvc, awsSvc)
+}
+
+func TestGetStockMovements(t *testing.T) {
+	testStockMovementRepo := &StockMovementTest{}
+	testStockMovementSvc := NewTestStockMovement(testStockMovementRepo)
 
 	t.Run("Get StockMovements", func(t *testing.T) {
 		testStockMovementRepo.GetStockMovementsFunc = func(ctx context.Context, q dto.BaseFilters) ([]models.StockMovement, int, error) {
@@ -101,6 +105,11 @@ func TestStockMovement(t *testing.T) {
 			t.Errorf("Expected no error, got %v", err)
 		}
 	})
+}
+
+func TestGetStockMovementByUUID(t *testing.T) {
+	testStockMovementRepo := &StockMovementTest{}
+	testStockMovementSvc := NewTestStockMovement(testStockMovementRepo)
 
 	t.Run("Get StockMovement By UUID", func(t *testing.T) {
 		testStockMovementRepo.GetStockMovementByUUIDFunc = func(ctx context.Context, uuid string) (*models.StockMovement, error) {
@@ -114,6 +123,11 @@ func TestStockMovement(t *testing.T) {
 			t.Errorf("Expected no error, got %v", err)
 		}
 	})
+}
+
+func TestCreateStockMovement(t *testing.T) {
+	testStockMovementRepo := &StockMovementTest{}
+	testStockMovementSvc := NewTestStockMovement(testStockMovementRepo)
 
 	t.Run("Create StockMovement", func(t *testing.T) {
 		testStockMovementRepo.CreateStockMovementFunc = func(ctx context.Context, sm *models.StockMovement) error {
@@ -139,8 +153,18 @@ func TestStockMovement(t *testing.T) {
 
 		wg.Wait()
 	})
+}
+
+func TestUpdateStockMovement(t *testing.T) {
+	testStockMovementRepo := &StockMovementTest{}
+	testStockMovementSvc := NewTestStockMovement(testStockMovementRepo)
 
 	t.Run("Update StockMovement", func(t *testing.T) {
+		testStockMovementRepo.GetStockMovementByUUIDFunc = func(ctx context.Context, uuid string) (*models.StockMovement, error) {
+			CheckUUID(t, uuid)
+			return &models.StockMovement{ProductID: 1}, nil
+		}
+
 		testStockMovementRepo.UpdateStockMovementFunc = func(ctx context.Context, sm *models.StockMovement) error {
 			if sm.ID == 0 {
 				t.Error("Expected sm ID to be populated")
@@ -158,8 +182,18 @@ func TestStockMovement(t *testing.T) {
 			t.Errorf("Expected no error, got %v", err)
 		}
 	})
+}
+
+func TestDeleteStockMovement(t *testing.T) {
+	testStockMovementRepo := &StockMovementTest{}
+	testStockMovementSvc := NewTestStockMovement(testStockMovementRepo)
 
 	t.Run("Delete StockMovement", func(t *testing.T) {
+		testStockMovementRepo.GetStockMovementByUUIDFunc = func(ctx context.Context, uuid string) (*models.StockMovement, error) {
+			CheckUUID(t, uuid)
+			return &models.StockMovement{ProductID: 1}, nil
+		}
+
 		testStockMovementRepo.DeleteStockMovementFunc = func(ctx context.Context, uuid string) error {
 			CheckUUID(t, uuid)
 			return nil
@@ -170,8 +204,18 @@ func TestStockMovement(t *testing.T) {
 			t.Errorf("Expected no error, got %v", err)
 		}
 	})
+}
+
+func TestUpdateStockMovementStatus(t *testing.T) {
+	testStockMovementRepo := &StockMovementTest{}
+	testStockMovementSvc := NewTestStockMovement(testStockMovementRepo)
 
 	t.Run("Update StockMovement Status", func(t *testing.T) {
+		testStockMovementRepo.GetStockMovementByUUIDFunc = func(ctx context.Context, uuid string) (*models.StockMovement, error) {
+			CheckUUID(t, uuid)
+			return &models.StockMovement{ProductID: 1}, nil
+		}
+
 		testStockMovementRepo.UpdateStockMovementStatusFunc = func(ctx context.Context, uuid string) error {
 			CheckUUID(t, uuid)
 			return nil
@@ -182,6 +226,11 @@ func TestStockMovement(t *testing.T) {
 			t.Errorf("Expected no error, got %v", err)
 		}
 	})
+}
+
+func TestProcessBulkUpload(t *testing.T) {
+	testStockMovementRepo := &StockMovementTest{}
+	testStockMovementSvc := NewTestStockMovement(testStockMovementRepo)
 
 	t.Run("Process Bulk Upload", func(t *testing.T) {
 		testStockMovementRepo.ProcessBulkUploadFunc = func(ctx context.Context, rows [][]string, pics [][]byte) ([]stock_movements.BulkUploadErrResponse, error) {
@@ -197,15 +246,6 @@ func TestStockMovement(t *testing.T) {
 			validProducts := []models.Product{}
 			invalidProducts := make(map[int]string)
 
-			for i, r := range rows {
-				if i == 0 && len(r) < 9 {
-					continue
-				}
-
-				excelSKUs[i-1] = helpers.CleanSpecialChars(r[0])         // will be used for SQL IN condition
-				excelProductNames[i-1] = helpers.CleanSpecialChars(r[1]) // will be used for SQL IN condition
-			}
-
 			for _, p := range existingProducts {
 				skuMap[p.SKU] = p.ID
 				nameMap[p.Name] = p.SKU
@@ -215,6 +255,9 @@ func TestStockMovement(t *testing.T) {
 				if i == 0 && len(r) < 9 {
 					continue
 				}
+
+				excelSKUs[i-1] = helpers.CleanSpecialChars(r[0])         // will be used for SQL IN condition
+				excelProductNames[i-1] = helpers.CleanSpecialChars(r[1]) // will be used for SQL IN condition
 
 				sku := r[0]
 				name := r[1]

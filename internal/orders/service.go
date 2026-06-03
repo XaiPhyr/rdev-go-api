@@ -103,29 +103,11 @@ func (s *service) CreateOrder(ctx context.Context, req OrderRequest, audit model
 		}
 	}
 
-	if order.TotalAmount == 0 {
-		return errors.New("order must have total amount")
+	if err := s.validateOrders(order); err != nil {
+		return err
 	}
 
-	if len(order.OrderItem) == 0 {
-		return errors.New("order must have order items")
-	}
-
-	for _, oi := range order.OrderItem {
-		if oi.ProductID == 0 || oi.TransactionPrice == 0 || oi.Quantity == 0 {
-			return errors.New("order ID/Product ID/Transaction Price/Quantity must not be 0")
-		}
-		if oi.Quantity < 0 {
-			return errors.New("quantity must not be negative")
-		}
-	}
-
-	err := helpers.ValidateStruct(order)
-	if err != nil {
-		return fmt.Errorf("validation error check field %v", err)
-	}
-
-	err = s.r.CreateOrder(ctx, order)
+	err := s.r.CreateOrder(ctx, order)
 
 	return err
 }
@@ -167,4 +149,25 @@ func (s *service) UpdateOrderStatus(ctx context.Context, uuid string, audit mode
 	}
 
 	return s.r.UpdateOrderStatus(ctx, uuid)
+}
+
+func (s *service) validateOrders(order *models.Order) error {
+	if order.TotalAmount == 0 || len(order.OrderItem) == 0 {
+		return errors.New("order must have order items or total amount")
+	}
+
+	for _, oi := range order.OrderItem {
+		if oi.ProductID == 0 || oi.TransactionPrice == 0 || oi.Quantity == 0 {
+			return errors.New("order ID/Product ID/Transaction Price/Quantity must not be 0")
+		}
+		if oi.Quantity < 0 {
+			return errors.New("quantity must not be negative")
+		}
+	}
+
+	if err := helpers.ValidateStruct(order); err != nil {
+		return fmt.Errorf("validation error check field %v", err)
+	}
+
+	return nil
 }

@@ -85,12 +85,16 @@ func (m *OrderTest) UpdateOrderStatus(ctx context.Context, uuid string) error {
 	return nil
 }
 
-func TestOrders(t *testing.T) {
-	testOrderRepo := &OrderTest{}
+func NewTestOrder(testOrderRepo *OrderTest) orders.OrderService {
 	emailSvc := mocks.NewTestEmailService()
 	_, auditLogSvc := mocks.NewTestAuditService()
 
-	testOrderSvc := orders.NewOrderService(testOrderRepo, emailSvc, nil, auditLogSvc)
+	return orders.NewOrderService(testOrderRepo, emailSvc, nil, auditLogSvc)
+}
+
+func TestGetOrderByUUIDCtxTimeout(t *testing.T) {
+	testOrderRepo := &OrderTest{}
+	testOrderSvc := NewTestOrder(testOrderRepo)
 
 	t.Run("Get Order By UUID with Context Timeout", func(t *testing.T) {
 		validUUID := "12345678-1234-1234-1234-123456789012"
@@ -113,6 +117,11 @@ func TestOrders(t *testing.T) {
 			t.Errorf("Expected no error, got %v", err)
 		}
 	})
+}
+
+func TestGetOrderByUUIDRateLimit(t *testing.T) {
+	testOrderRepo := &OrderTest{}
+	testOrderSvc := NewTestOrder(testOrderRepo)
 
 	t.Run("Get Order By UUID with Rate Limiting", func(t *testing.T) {
 		callCount := 0
@@ -140,6 +149,11 @@ func TestOrders(t *testing.T) {
 			t.Errorf("Expected no error, got %v", err)
 		}
 	})
+}
+
+func TestGetOrderByUUIDEmptyOrderNumber(t *testing.T) {
+	testOrderRepo := &OrderTest{}
+	testOrderSvc := NewTestOrder(testOrderRepo)
 
 	t.Run("Get Order By UUID with Empty Order Number", func(t *testing.T) {
 		validUUID := "12345678-1234-1234-1234-123456789012"
@@ -158,6 +172,11 @@ func TestOrders(t *testing.T) {
 			t.Errorf("Expected no error, got %v", err)
 		}
 	})
+}
+
+func TestGetOrdersSearchSpecialChars(t *testing.T) {
+	testOrderRepo := &OrderTest{}
+	testOrderSvc := NewTestOrder(testOrderRepo)
 
 	t.Run("Get Orders Search with Special Characters", func(t *testing.T) {
 		testOrderRepo.GetOrdersFunc = func(ctx context.Context, q dto.BaseFilters) ([]models.Order, int, error) {
@@ -178,6 +197,11 @@ func TestOrders(t *testing.T) {
 			t.Errorf("Expected no error, got %v", err)
 		}
 	})
+}
+
+func TestCreateOrderNoAmount(t *testing.T) {
+	testOrderRepo := &OrderTest{}
+	testOrderSvc := NewTestOrder(testOrderRepo)
 
 	t.Run("Create Order with no total amount", func(t *testing.T) {
 		testOrderRepo.CreateOrderFunc = func(ctx context.Context, order *models.Order) error {
@@ -201,6 +225,11 @@ func TestOrders(t *testing.T) {
 			t.Errorf("Expected no error, got %v", err)
 		}
 	})
+}
+
+func TestUpdateOrderNoCustomerIDUUID(t *testing.T) {
+	testOrderRepo := &OrderTest{}
+	testOrderSvc := NewTestOrder(testOrderRepo)
 
 	t.Run("Update Order with no customer id or no uuid", func(t *testing.T) {
 		testOrderRepo.UpdateOrderFunc = func(ctx context.Context, order *models.Order) error {
@@ -216,20 +245,11 @@ func TestOrders(t *testing.T) {
 			t.Errorf("Expected no error, got %v", err)
 		}
 	})
+}
 
-	t.Run("Delete Order with no uuid", func(t *testing.T) {
-		testOrderRepo.DeleteOrderFunc = func(ctx context.Context, uuid string) error {
-			return nil
-		}
-
-		validUUID := "12345678-1234-1234-1234-123456789012"
-
-		err := testOrderSvc.DeleteOrder(context.Background(), validUUID, models.AuditLogRequest{})
-
-		if err != nil {
-			t.Errorf("Expected no error, got %v", err)
-		}
-	})
+func TestUpdateOrderStatusNoUUID(t *testing.T) {
+	testOrderRepo := &OrderTest{}
+	testOrderSvc := NewTestOrder(testOrderRepo)
 
 	t.Run("Update Order Status with no uuid", func(t *testing.T) {
 		testOrderRepo.UpdateOrderStatusFunc = func(ctx context.Context, uuid string) error {
@@ -244,6 +264,30 @@ func TestOrders(t *testing.T) {
 			t.Errorf("Expected no error, got %v", err)
 		}
 	})
+}
+
+func TestOrderDeleteOrderNoUUID(t *testing.T) {
+	testOrderRepo := &OrderTest{}
+	testOrderSvc := NewTestOrder(testOrderRepo)
+
+	t.Run("Delete Order with no uuid", func(t *testing.T) {
+		testOrderRepo.DeleteOrderFunc = func(ctx context.Context, uuid string) error {
+			return nil
+		}
+
+		validUUID := "12345678-1234-1234-1234-123456789012"
+
+		err := testOrderSvc.DeleteOrder(context.Background(), validUUID, models.AuditLogRequest{})
+
+		if err != nil {
+			t.Errorf("Expected no error, got %v", err)
+		}
+	})
+}
+
+func TestOrderNoOrderItem(t *testing.T) {
+	testOrderRepo := &OrderTest{}
+	testOrderSvc := NewTestOrder(testOrderRepo)
 
 	t.Run("Order with no order item", func(t *testing.T) {
 		testOrderRepo.CreateOrderFunc = func(ctx context.Context, order *models.Order) error {
