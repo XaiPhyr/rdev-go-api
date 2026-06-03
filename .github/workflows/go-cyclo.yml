@@ -1,0 +1,28 @@
+name: Go Cyclo Pipeline
+
+on:
+  push:
+    branches: ["main"]
+    paths-ignore:
+      - "README.md"
+      - "**.md"
+
+jobs:
+  gocyclo-check:
+    name: Run gocyclo
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v6
+        with:
+          go-version: stable
+
+      - name: Install gocyclo
+        run: go install github.com/fzipp/gocyclo/cmd/gocyclo@latest
+
+      - name: Run Complexity Analysis
+        run: gocyclo -over 10 .
