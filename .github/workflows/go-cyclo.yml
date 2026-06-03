@@ -6,6 +6,7 @@ on:
     paths-ignore:
       - "README.md"
       - "**.md"
+      - ".github/**"
 
 jobs:
   gocyclo-check:
@@ -19,10 +20,10 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v6
         with:
-          go-version: stable
+          go-version-file: "go.mod"
 
       - name: Install gocyclo
         run: go install github.com/fzipp/gocyclo/cmd/gocyclo@latest
 
-      - name: Run Complexity Analysis
+      - name: Run Go Cyclo
         run: gocyclo -over 10 .
