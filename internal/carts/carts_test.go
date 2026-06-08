@@ -12,7 +12,8 @@ import (
 )
 
 type CartTest struct {
-	AddToCartFunc func(ctx context.Context, cart *models.Cart) (*models.Cart, error)
+	AddToCartFunc           func(ctx context.Context, cart *models.Cart) (*models.Cart, error)
+	GetCartByCustomerIDFunc func(ctx context.Context, cart *carts.CartRequest) (*models.Cart, error)
 }
 
 func (m *CartTest) AddToCart(ctx context.Context, cart *models.Cart) (*models.Cart, error) {
@@ -23,12 +24,24 @@ func (m *CartTest) AddToCart(ctx context.Context, cart *models.Cart) (*models.Ca
 	return cart, nil
 }
 
-func TestCart(t *testing.T) {
-	testCartRepo := &CartTest{}
+func (m *CartTest) GetCartByCustomerID(ctx context.Context, cart *carts.CartRequest) (*models.Cart, error) {
+	if m.GetCartByCustomerIDFunc != nil {
+		return m.GetCartByCustomerIDFunc(ctx, cart)
+	}
+
+	return &models.Cart{}, nil
+}
+
+func NewTestCart(testCartRepo *CartTest) carts.CartService {
 	emailSvc := mocks.NewTestEmailService()
 	_, auditLogSvc := mocks.NewTestAuditService()
 
-	testCartSvc := carts.NewCartService(testCartRepo, emailSvc, nil, auditLogSvc)
+	return carts.NewCartService(testCartRepo, emailSvc, nil, auditLogSvc)
+}
+
+func TestAddToCart(t *testing.T) {
+	testCartRepo := &CartTest{}
+	testCartSvc := NewTestCart(testCartRepo)
 
 	t.Run("Add To Cart", func(t *testing.T) {
 		testCartRepo.AddToCartFunc = func(ctx context.Context, cart *models.Cart) (*models.Cart, error) {
@@ -45,6 +58,11 @@ func TestCart(t *testing.T) {
 			t.Errorf("Expected no error, got %v", err)
 		}
 	})
+}
+
+func TestUserNoActiveCart(t *testing.T) {
+	testCartRepo := &CartTest{}
+	testCartSvc := NewTestCart(testCartRepo)
 
 	t.Run("User no active cart", func(t *testing.T) {
 		testCartRepo.AddToCartFunc = func(ctx context.Context, cart *models.Cart) (*models.Cart, error) {
@@ -73,6 +91,11 @@ func TestCart(t *testing.T) {
 			t.Errorf("Expected no error, got %v", err)
 		}
 	})
+}
+
+func TestUpdateCartItemQuantity(t *testing.T) {
+	testCartRepo := &CartTest{}
+	testCartSvc := NewTestCart(testCartRepo)
 
 	t.Run("Update cart item quantity", func(t *testing.T) {
 		testCartRepo.AddToCartFunc = func(ctx context.Context, cart *models.Cart) (*models.Cart, error) {
@@ -116,6 +139,23 @@ func TestCart(t *testing.T) {
 			fmt.Println("UPDATED CART: ", v.ProductID, v.Quantity)
 			fmt.Println()
 		}
+
+		if err != nil {
+			t.Errorf("Expected no error, got %v", err)
+		}
+	})
+}
+
+func TestGetCartByCustomerID(t *testing.T) {
+	testCartRepo := &CartTest{}
+	testCartSvc := NewTestCart(testCartRepo)
+
+	t.Run("Get cart by customer id", func(t *testing.T) {
+		testCartRepo.GetCartByCustomerIDFunc = func(ctx context.Context, cart *carts.CartRequest) (*models.Cart, error) {
+			return &models.Cart{}, nil
+		}
+
+		_, err := testCartSvc.GetCartByCustomerID(context.Background(), &carts.CartRequest{CustomerID: new(int64(0))})
 
 		if err != nil {
 			t.Errorf("Expected no error, got %v", err)

@@ -12,10 +12,12 @@ import (
 
 type CartRepository interface {
 	AddToCart(ctx context.Context, cart *models.Cart) (*models.Cart, error)
+	GetCartByCustomerID(ctx context.Context, req *CartRequest) (*models.Cart, error)
 }
 
 type CartService interface {
 	AddToCart(ctx context.Context, cart *CartRequest, audit models.AuditLogRequest) (*models.Cart, error)
+	GetCartByCustomerID(ctx context.Context, req *CartRequest) (*models.Cart, error)
 }
 
 type service struct {
@@ -68,6 +70,12 @@ func (s *service) AddToCart(ctx context.Context, req *CartRequest, audit models.
 
 	cart, err := s.r.AddToCart(ctx, cart)
 	s.auditLog.ParseAndCreateAuditLog(audit, cart.UUID, "CART", nil, *cart, err)
+
+	return cart, err
+}
+
+func (s *service) GetCartByCustomerID(ctx context.Context, req *CartRequest) (*models.Cart, error) {
+	cart, err := s.r.GetCartByCustomerID(ctx, req)
 
 	return cart, err
 }
